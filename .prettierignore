@@ -1,0 +1,9 @@
+node_modules
+.next
+coverage
+playwright-report
+test-results
+package-lock.json
+tsconfig.tsbuildinfo
+next-env.d.ts
+README.md
