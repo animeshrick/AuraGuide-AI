@@ -10,6 +10,10 @@ lerna-debug.log*
 .next/
 out/
 
+# Cloudflare (OpenNext) build output
+.open-next/
+.wrangler/
+
 # Environment files
 .env
 .env.local
