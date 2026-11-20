@@ -94,3 +94,11 @@ export async function expectNoAxeViolations(page: Page) {
   );
   expect(problems, problems.join("\n")).toEqual([]);
 }
+
+/**
+ * A visible banner that contains some text. Next.js adds its own empty role="alert" element for
+ * route changes, so a bare getByRole("alert") matches two elements. Matching on text picks ours.
+ */
+export function alertWith(page: Page, text: string) {
+  return page.getByRole("alert").filter({ hasText: text });
+}

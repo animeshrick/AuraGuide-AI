@@ -42,7 +42,10 @@ export const HourlyAQIChart: React.FC<HourlyAQIChartProps> = ({ hourly, dict }) 
       >
         <ol className="flex items-end gap-1.5 min-w-[720px] pt-2">
           {rows.map((r, i) => (
-            <li key={r.time} className="flex-1 min-w-[26px] flex flex-col items-center justify-end">
+            <li
+              key={r.time}
+              className="relative flex-1 min-w-[26px] flex flex-col items-center justify-end"
+            >
               <span className="sr-only">
                 {`${formatHour(r.hour)}, ${dict.metrics.aqiLabel} ${r.aqi}, ${dict.categories[r.category]}`}
               </span>

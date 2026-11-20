@@ -38,25 +38,32 @@ describe("Navbar", () => {
     render(<Navbar currentLanguage="hi" onLanguageChange={() => {}} />);
     const pressed = (name: string) =>
       screen.getByRole("button", { name }).getAttribute("aria-pressed");
-    expect(pressed("भाषा बदलकर हिंदी करें")).toBe("true");
-    expect(pressed("भाषा बदलकर अंग्रेज़ी करें")).toBe("false");
+    const hi = getDictionary("hi").nav;
+    expect(pressed(hi.switchToHindi)).toBe("true");
+    expect(pressed(hi.switchToEnglish)).toBe("false");
   });
 
   it("tells the page which language was chosen", async () => {
     const onLanguageChange = vi.fn();
     render(<Navbar currentLanguage="en" onLanguageChange={onLanguageChange} />);
 
-    await userEvent.click(screen.getByRole("button", { name: "Switch language to Bengali" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: getDictionary("en").nav.switchToBengali })
+    );
     expect(onLanguageChange).toHaveBeenCalledWith("bn");
   });
 
   it("marks each language button with its own language for screen readers", () => {
     render(<Navbar currentLanguage="en" onLanguageChange={() => {}} />);
     expect(
-      screen.getByRole("button", { name: "Switch language to Hindi" }).getAttribute("lang")
+      screen
+        .getByRole("button", { name: getDictionary("en").nav.switchToHindi })
+        .getAttribute("lang")
     ).toBe("hi");
     expect(
-      screen.getByRole("button", { name: "Switch language to Bengali" }).getAttribute("lang")
+      screen
+        .getByRole("button", { name: getDictionary("en").nav.switchToBengali })
+        .getAttribute("lang")
     ).toBe("bn");
   });
 

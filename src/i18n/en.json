@@ -6,9 +6,9 @@
     "skipToContent": "Skip to main content",
     "newProfile": "New profile",
     "languageGroup": "Language",
-    "switchToEnglish": "Switch language to English",
-    "switchToHindi": "Switch language to Hindi",
-    "switchToBengali": "Switch language to Bengali",
+    "switchToEnglish": "Switch language to English (EN)",
+    "switchToHindi": "Switch language to Hindi (हिंदी)",
+    "switchToBengali": "Switch language to Bengali (বাংলা)",
     "badge": "PromptWars Challenge 6"
   },
   "hero": {

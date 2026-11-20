@@ -36,8 +36,10 @@ test.describe("API input handling", () => {
   });
 
   test("rejects a body that is not JSON", async ({ request }) => {
+    // Playwright turns a string into a valid JSON string when the type is application/json, so
+    // send it as plain text to make sure the server really receives the broken JSON.
     const response = await request.post("/api/plan", {
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "text/plain" },
       data: "{not json",
     });
     expect(response.status()).toBe(400);

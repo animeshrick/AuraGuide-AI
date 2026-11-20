@@ -63,6 +63,15 @@ describe("HourlyAQIChart", () => {
     expect(items[0].textContent).toContain(dict.categories[first.category]);
   });
 
+  it("keeps each bar's hidden text inside the bar, so the chart scrolls and the page does not", () => {
+    // Absolutely positioned screen-reader text escapes a scrolling box unless its parent is
+    // positioned. Without this the whole page scrolls sideways on a phone.
+    const { container } = render(<HourlyAQIChart hourly={makeHourly()} dict={dict} />);
+    for (const item of container.querySelectorAll("ol > li")) {
+      expect(item.className.split(" ")).toContain("relative");
+    }
+  });
+
   it("keeps the scroll area reachable by keyboard", () => {
     render(<HourlyAQIChart hourly={makeHourly()} dict={dict} />);
     const region = screen.getByRole("region", { name: dict.results.hourlyScrollLabel });

@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import {
+  alertWith,
   createPlan,
   dictionaries,
   mockJson,
@@ -206,7 +207,7 @@ test.describe("errors", () => {
       await page.goto("/");
       await page.getByRole("button", { name: en.form.generatePlan }).click();
 
-      await expect(page.getByRole("alert")).toContainText(message);
+      await expect(alertWith(page, message)).toBeVisible();
       // The household is still on screen, so nothing the person typed is lost.
       await expect(page.getByLabel(en.form.city)).toHaveValue("New Delhi");
     });
@@ -216,7 +217,7 @@ test.describe("errors", () => {
     await page.route("**/api/plan", (route) => route.abort("failed"));
     await page.goto("/");
     await page.getByRole("button", { name: en.form.generatePlan }).click();
-    await expect(page.getByRole("alert")).toContainText(en.errors.network);
+    await expect(alertWith(page, en.errors.network)).toBeVisible();
   });
 });
 
@@ -233,7 +234,8 @@ test.describe("what-if and community advisory", () => {
     await expect(page.getByRole("heading", { name: /A good change for Rajesh/ })).toBeVisible();
     expect(requests).toHaveLength(1);
     expect(requests[0].toMode).toBe("metro");
-    expect(requests[0].memberId).toBe("m1");
+    const sent = requests[0].profile as { members: Array<{ id: string }> };
+    expect(requests[0].memberId).toBe(sent.members[0].id);
     expect(requests[0].language).toBe("en");
   });
 
