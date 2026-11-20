@@ -158,7 +158,3 @@ Google Antigravity was used for AI-assisted development throughout this project.
 ## Author
 
 Animesh Banerjee, [@animeshrick](https://github.com/animeshrick)
-
-## License
-
-MIT
