@@ -79,7 +79,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                     lang={lang.code}
                     onClick={() => onLanguageChange(lang.code)}
                     aria-pressed={selected}
-                    aria-label={lang.label}
                     className={`px-2 py-1 rounded transition ${
                       selected
                         ? "bg-white text-sky-800 shadow-sm font-semibold"
@@ -87,6 +86,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     }`}
                   >
                     {lang.short}
+                    <span className="sr-only"> {lang.label}</span>
                   </button>
                 );
               })}

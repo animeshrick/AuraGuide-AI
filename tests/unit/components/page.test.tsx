@@ -97,7 +97,7 @@ describe("HomePage", () => {
     const user = userEvent.setup();
     render(<HomePage />);
 
-    await user.click(screen.getByRole("button", { name: en.nav.switchToHindi }));
+    await user.click(screen.getByRole("button", { name: new RegExp(en.nav.switchToHindi) }));
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(hi.hero.title);
@@ -112,7 +112,7 @@ describe("HomePage", () => {
     await user.click(createPlanButton());
     await screen.findByRole("heading", { level: 1, name: /New Delhi/ });
 
-    await user.click(screen.getByRole("button", { name: en.nav.switchToHindi }));
+    await user.click(screen.getByRole("button", { name: new RegExp(en.nav.switchToHindi) }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     expect(bodyOfCall(1).language).toBe("hi");
@@ -130,7 +130,7 @@ describe("HomePage", () => {
 
     await user.click(createPlanButton());
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
-    await user.click(screen.getByRole("button", { name: en.nav.switchToBengali }));
+    await user.click(screen.getByRole("button", { name: new RegExp(en.nav.switchToBengali) }));
     first.resolve(reply(planFor("New Delhi")));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));

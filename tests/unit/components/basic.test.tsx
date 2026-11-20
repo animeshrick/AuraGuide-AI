@@ -37,7 +37,7 @@ describe("Navbar", () => {
   it("marks the chosen language as pressed", () => {
     render(<Navbar currentLanguage="hi" onLanguageChange={() => {}} />);
     const pressed = (name: string) =>
-      screen.getByRole("button", { name }).getAttribute("aria-pressed");
+      screen.getByRole("button", { name: new RegExp(name) }).getAttribute("aria-pressed");
     const hi = getDictionary("hi").nav;
     expect(pressed(hi.switchToHindi)).toBe("true");
     expect(pressed(hi.switchToEnglish)).toBe("false");
@@ -48,7 +48,7 @@ describe("Navbar", () => {
     render(<Navbar currentLanguage="en" onLanguageChange={onLanguageChange} />);
 
     await userEvent.click(
-      screen.getByRole("button", { name: getDictionary("en").nav.switchToBengali })
+      screen.getByRole("button", { name: new RegExp(getDictionary("en").nav.switchToBengali) })
     );
     expect(onLanguageChange).toHaveBeenCalledWith("bn");
   });
@@ -57,12 +57,12 @@ describe("Navbar", () => {
     render(<Navbar currentLanguage="en" onLanguageChange={() => {}} />);
     expect(
       screen
-        .getByRole("button", { name: getDictionary("en").nav.switchToHindi })
+        .getByRole("button", { name: new RegExp(getDictionary("en").nav.switchToHindi) })
         .getAttribute("lang")
     ).toBe("hi");
     expect(
       screen
-        .getByRole("button", { name: getDictionary("en").nav.switchToBengali })
+        .getByRole("button", { name: new RegExp(getDictionary("en").nav.switchToBengali) })
         .getAttribute("lang")
     ).toBe("bn");
   });

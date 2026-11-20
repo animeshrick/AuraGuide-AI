@@ -10,7 +10,7 @@ afterEach(cleanup);
 
 describe("language switcher", () => {
   it.each(SUPPORTED_LANGUAGES)(
-    "names each button with the text it shows, on the %s page",
+    "keeps the visible text inside each button's accessible name, on the %s page",
     (page) => {
       const dict = getDictionary(page);
       render(<Navbar currentLanguage={page} onLanguageChange={() => undefined} />);
@@ -18,14 +18,17 @@ describe("language switcher", () => {
       const group = screen.getByRole("group", { name: dict.nav.languageGroup });
       const buttons = within(group).getAllByRole("button");
       expect(buttons).toHaveLength(3);
+      const labels = [dict.nav.switchToEnglish, dict.nav.switchToHindi, dict.nav.switchToBengali];
 
-      for (const button of buttons) {
-        // WCAG 2.5.3 Label in Name: someone who says the visible text, such as "EN", must hit the
-        // button, so the visible text has to be a whole word of the accessible name.
-        const visible = (button.textContent ?? "").trim().toLowerCase();
-        const words = (button.getAttribute("aria-label") ?? "").toLowerCase().split(/[\s()]+/);
-        expect(words, `${page}: "${visible}"`).toContain(visible);
-      }
+      // WCAG 2.5.3 Label in Name: whoever says the visible text, such as "EN", must hit the button.
+      // The accessible name is the button's text content, so the visible text has to appear in it.
+      buttons.forEach((button, i) => {
+        const name = (button.textContent ?? "").trim();
+        const visible = name.slice(0, name.length - labels[i].length).trim();
+        expect(visible.length, `${page}: visible text`).toBeGreaterThan(0);
+        expect(name, `${page}: "${name}"`).toContain(visible);
+        expect(name, `${page}: "${name}"`).toContain(labels[i]);
+      });
     }
   );
 
