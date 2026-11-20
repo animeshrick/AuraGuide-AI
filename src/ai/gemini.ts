@@ -19,20 +19,24 @@ import {
   buildWhatIfPrompt,
   SYSTEM_INSTRUCTION,
 } from "./prompts";
-import {
-  GEMINI_PLAN_RESPONSE_SCHEMA,
-  GeminiPlanOutput,
-  GeminiPlanOutputSchema,
-} from "./schemas";
+import { GEMINI_PLAN_RESPONSE_SCHEMA, GeminiPlanOutput, GeminiPlanOutputSchema } from "./schemas";
 
 const REQUEST_TIMEOUT_MS = 25_000;
 const PLAN_CACHE_TTL_MS = 15 * 60 * 1000;
 const TEXT_CACHE_TTL_MS = 15 * 60 * 1000;
 const MAX_TEXT_LENGTH = 2500;
 
+let warnedAboutMissingKey = false;
+
 function getClient(): GoogleGenAI | null {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey.trim() === "" || apiKey === "your_gemini_api_key_here") {
+    if (!warnedAboutMissingKey) {
+      warnedAboutMissingKey = true;
+      console.warn(
+        "GEMINI_API_KEY is missing or still the placeholder, using the rule-based plan."
+      );
+    }
     return null;
   }
   return new GoogleGenAI({ apiKey });
@@ -149,7 +153,12 @@ export async function generateOptimizedPlanWithGemini(
     });
 
     const text = response.text;
-    if (!text) return null;
+    if (!text) {
+      console.warn(
+        `Gemini plan returned no text (finish reason: ${response.candidates?.[0]?.finishReason ?? "unknown"}).`
+      );
+      return null;
+    }
 
     const parsed = GeminiPlanOutputSchema.safeParse(JSON.parse(text));
     if (!parsed.success) {

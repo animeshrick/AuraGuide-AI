@@ -50,9 +50,7 @@ export function enforceRateLimit(req: Request): NextResponse | null {
   );
 }
 
-export type JsonBodyResult =
-  | { ok: true; data: unknown }
-  | { ok: false; response: NextResponse };
+export type JsonBodyResult = { ok: true; data: unknown } | { ok: false; response: NextResponse };
 
 /** Read a small JSON body. Larger bodies and invalid JSON get a clear error. */
 export async function readJsonBody(req: Request): Promise<JsonBodyResult> {

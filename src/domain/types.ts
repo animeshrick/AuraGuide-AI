@@ -1,19 +1,7 @@
-export type AQICategory =
-  | "Good"
-  | "Satisfactory"
-  | "Moderate"
-  | "Poor"
-  | "Very Poor"
-  | "Severe";
+export type AQICategory = "Good" | "Satisfactory" | "Moderate" | "Poor" | "Very Poor" | "Severe";
 
 export type HealthSensitivity =
-  | "asthma"
-  | "pregnant"
-  | "infant"
-  | "elderly"
-  | "outdoor_worker"
-  | "cardiac"
-  | "none";
+  "asthma" | "pregnant" | "infant" | "elderly" | "outdoor_worker" | "cardiac" | "none";
 
 export type CommuteMode =
   | "walk"
@@ -24,7 +12,8 @@ export type CommuteMode =
   | "metro"
   | "car_ice"
   | "car_ev"
-  | "work_from_home";
+  | "work_from_home"
+  | "homemaker";
 
 export type CookingFuel = "lpg" | "biomass" | "electric";
 
@@ -41,6 +30,8 @@ export interface HouseholdMember {
   name: string;
   age: number;
   sensitivities: HealthSensitivity[];
+  /** Optional. True when the person smokes or vapes. Left out when not said. */
+  smokes?: boolean;
   commuteMode: CommuteMode;
   commuteDistanceKm: number; // one way
   commuteTimeMinutes: number; // one way
@@ -128,10 +119,7 @@ export interface EmissionImpact {
 }
 
 export type ScheduleActionType =
-  | "schedule_shift"
-  | "mode_swap"
-  | "indoor_protection"
-  | "purifier_timing";
+  "schedule_shift" | "mode_swap" | "indoor_protection" | "purifier_timing";
 
 export interface ScheduleItem {
   hour: number;

@@ -18,6 +18,7 @@ export const EMISSION_FACTORS_KG_PER_KM: Record<CommuteMode, number> = {
   car_ev: 0.053, // electric four-wheeler at Indian grid carbon intensity
   car_ice: 0.175, // petrol/diesel private car
   work_from_home: 0.0,
+  homemaker: 0.0,
 };
 
 /**
@@ -35,6 +36,13 @@ export const HEALTH_SENSITIVITY_MULTIPLIERS: Record<HealthSensitivity, number> =
   elderly: 1.6, // reduced clearance efficiency
   outdoor_worker: 1.5, // sustained ambient inhalation burden
 };
+
+/**
+ * Multiplier for a person who smokes or vapes. Their airways are already irritated, so the same
+ * dose of fine particles does more harm. It is an estimate for comparing choices, not a clinical
+ * figure, and it is used the same way as the sensitivities above (the highest one counts).
+ */
+export const SMOKER_MULTIPLIER = 1.4;
 
 /**
  * Inhalation rate estimates in m³/hour based on EPA Exposure Factors Handbook
@@ -82,6 +90,7 @@ export const COMMUTE_AMBIENT_FACTOR: Record<CommuteMode, number> = {
   car_ice: 1.0,
   car_ev: 1.0,
   work_from_home: 1.0,
+  homemaker: 1.0,
 };
 
 /** Breathing rate while travelling, in m³/hour. */
@@ -95,6 +104,7 @@ export const COMMUTE_INHALATION_RATE: Record<CommuteMode, number> = {
   car_ice: INHALATION_RATES_M3_PER_HOUR.light_commute,
   car_ev: INHALATION_RATES_M3_PER_HOUR.light_commute,
   work_from_home: INHALATION_RATES_M3_PER_HOUR.light_commute,
+  homemaker: INHALATION_RATES_M3_PER_HOUR.light_commute,
 };
 
 /**

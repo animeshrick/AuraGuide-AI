@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useId, useState } from "react";
-import { Users, Plus, Trash2, Sparkles, MapPin, ArrowRight, Sun } from "lucide-react";
+import React, { useEffect, useId, useRef, useState } from "react";
+import { Users, Plus, Trash2, Sparkles, MapPin, ArrowRight, Sun, Check } from "lucide-react";
 import {
   CommuteMode,
   CookingFuel,
@@ -11,6 +11,7 @@ import {
   OutdoorActivity,
 } from "@/domain/types";
 import { formatHour } from "@/domain/labels";
+import { staysAtHome } from "@/domain/modes";
 import { formatMessage, getDictionary, SupportedLanguage } from "@/i18n";
 
 interface HouseholdFormProps {
@@ -26,7 +27,10 @@ type DemoKey = "demoDelhi" | "demoKolkata" | "demoPatna";
 const MAX_MEMBERS = 10;
 const MAX_ACTIVITIES = 5;
 
-const COMMUTE_MODES: CommuteMode[] = [
+/** Shown first, because most people searching the list for a stay-at-home option look at the top. */
+const HOME_MODES: CommuteMode[] = ["homemaker", "work_from_home"];
+
+const TRAVEL_MODES: CommuteMode[] = [
   "two_wheeler",
   "auto_rickshaw",
   "metro",
@@ -35,7 +39,6 @@ const COMMUTE_MODES: CommuteMode[] = [
   "car_ev",
   "bicycle",
   "walk",
-  "work_from_home",
 ];
 
 const SENSITIVITIES: HealthSensitivity[] = [
@@ -263,14 +266,31 @@ export const HouseholdForm: React.FC<HouseholdFormProps> = ({
     setVersion((v) => v + 1);
   };
 
+  // The new card is added below the Add member button, often off screen, so move the cursor to it.
+  const [memberToFocus, setMemberToFocus] = useState<string | null>(null);
+  const nameInputs = useRef(new Map<string, HTMLInputElement>());
+
+  useEffect(() => {
+    if (!memberToFocus) return;
+    const input = nameInputs.current.get(memberToFocus);
+    if (input) {
+      input.focus();
+      input.scrollIntoView?.({ block: "center", behavior: "smooth" });
+    }
+    setMemberToFocus(null);
+  }, [memberToFocus]);
+
   const addMember = () => {
+    if (members.length >= MAX_MEMBERS) return;
+    const id = nextMemberId(members);
+    setMemberToFocus(id);
     setMembers((prev) =>
       prev.length >= MAX_MEMBERS
         ? prev
         : [
             ...prev,
             {
-              id: nextMemberId(prev),
+              id,
               name: "",
               age: 30,
               sensitivities: ["none"],
@@ -297,7 +317,9 @@ export const HouseholdForm: React.FC<HouseholdFormProps> = ({
         if (m.id !== memberId) return m;
         if (sens === "none") return { ...m, sensitivities: ["none"] };
         const without = m.sensitivities.filter((s) => s !== "none");
-        const next = without.includes(sens) ? without.filter((s) => s !== sens) : [...without, sens];
+        const next = without.includes(sens)
+          ? without.filter((s) => s !== sens)
+          : [...without, sens];
         return { ...m, sensitivities: next.length === 0 ? ["none"] : next };
       })
     );
@@ -346,7 +368,7 @@ export const HouseholdForm: React.FC<HouseholdFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLoading) return;
+    if (isLoading || city.trim().length < 2) return;
     onSubmit({
       city: city.trim(),
       cookingFuel,
@@ -356,8 +378,8 @@ export const HouseholdForm: React.FC<HouseholdFormProps> = ({
         ...m,
         name: m.name.trim(),
         // Commuting numbers mean nothing for someone who stays home.
-        commuteDistanceKm: m.commuteMode === "work_from_home" ? 0 : m.commuteDistanceKm,
-        commuteTimeMinutes: m.commuteMode === "work_from_home" ? 0 : m.commuteTimeMinutes,
+        commuteDistanceKm: staysAtHome(m.commuteMode) ? 0 : m.commuteDistanceKm,
+        commuteTimeMinutes: staysAtHome(m.commuteMode) ? 0 : m.commuteTimeMinutes,
         outdoorActivities: m.outdoorActivities.map((a) => ({
           ...a,
           description: a.description.trim(),
@@ -520,7 +542,8 @@ export const HouseholdForm: React.FC<HouseholdFormProps> = ({
         <ul className="space-y-4">
           {members.map((member, idx) => {
             const mid = `${uid}-${member.id}`;
-            const label = member.name.trim() || formatMessage(dict.form.memberNumber, { n: idx + 1 });
+            const label =
+              member.name.trim() || formatMessage(dict.form.memberNumber, { n: idx + 1 });
             return (
               <li
                 key={member.id}
@@ -549,6 +572,10 @@ export const HouseholdForm: React.FC<HouseholdFormProps> = ({
                     </label>
                     <input
                       id={`${mid}-name`}
+                      ref={(el) => {
+                        if (el) nameInputs.current.set(member.id, el);
+                        else nameInputs.current.delete(member.id);
+                      }}
                       type="text"
                       required
                       maxLength={50}
@@ -592,16 +619,25 @@ export const HouseholdForm: React.FC<HouseholdFormProps> = ({
                       }
                       className={INPUT_CLASS}
                     >
-                      {COMMUTE_MODES.map((mode) => (
-                        <option key={mode} value={mode}>
-                          {dict.modes[mode]}
-                        </option>
-                      ))}
+                      <optgroup label={dict.form.modeGroupHome}>
+                        {HOME_MODES.map((mode) => (
+                          <option key={mode} value={mode}>
+                            {dict.modes[mode]}
+                          </option>
+                        ))}
+                      </optgroup>
+                      <optgroup label={dict.form.modeGroupTravel}>
+                        {TRAVEL_MODES.map((mode) => (
+                          <option key={mode} value={mode}>
+                            {dict.modes[mode]}
+                          </option>
+                        ))}
+                      </optgroup>
                     </select>
                   </div>
                 </div>
 
-                {member.commuteMode !== "work_from_home" && (
+                {!staysAtHome(member.commuteMode) && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-200/60">
                     <div>
                       <label htmlFor={`${mid}-dist`} className={LABEL_CLASS}>
@@ -660,18 +696,40 @@ export const HouseholdForm: React.FC<HouseholdFormProps> = ({
                           type="button"
                           aria-pressed={selected}
                           onClick={() => toggleSensitivity(member.id, sens)}
-                          className={`text-xs px-2.5 py-1 rounded-full border transition font-medium ${
+                          className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition font-medium ${
                             selected
                               ? "bg-sky-700 text-white border-sky-700"
                               : "bg-white text-slate-700 border-slate-300 hover:border-slate-500"
                           }`}
                         >
+                          {selected && <Check className="w-3 h-3" aria-hidden="true" />}
                           {dict.form.sensitivityOptions[sens]}
                         </button>
                       );
                     })}
                   </div>
                 </fieldset>
+
+                <label
+                  htmlFor={`${mid}-smokes`}
+                  className="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 cursor-pointer transition"
+                >
+                  <input
+                    id={`${mid}-smokes`}
+                    type="checkbox"
+                    checked={member.smokes === true}
+                    onChange={(e) =>
+                      updateMember(member.id, { smokes: e.target.checked ? true : undefined })
+                    }
+                    className="mt-1 w-4 h-4 text-sky-700 rounded border-slate-300 focus:ring-sky-600"
+                  />
+                  <span>
+                    <span className="text-sm font-semibold text-slate-900 block">
+                      {dict.form.smokes}
+                    </span>
+                    <span className="text-xs text-slate-600 block">{dict.form.smokesHint}</span>
+                  </span>
+                </label>
 
                 <fieldset className="pt-2 border-t border-slate-200/60 space-y-3">
                   <legend className="flex items-center gap-1.5 text-xs font-medium text-slate-800">

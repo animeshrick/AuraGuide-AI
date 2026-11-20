@@ -1,4 +1,4 @@
-import { z, ZodTypeAny } from "zod";
+import { z } from "zod";
 
 export interface ValidationSuccess<T> {
   success: true;
@@ -15,7 +15,7 @@ export interface ValidationFailure {
  * the rule message are returned, never the submitted value.
  * The result type is the schema's output, so defaults are already applied.
  */
-export function validatePayload<S extends ZodTypeAny>(
+export function validatePayload<S extends z.ZodType>(
   schema: S,
   data: unknown
 ): ValidationSuccess<z.output<S>> | ValidationFailure {

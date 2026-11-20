@@ -27,6 +27,25 @@ describe("readJsonBody", () => {
     if (!result.ok) expect(result.response.status).toBe(400);
   });
 
+  it("refuses early when the declared length is over 32 KB", async () => {
+    const req = new Request("http://localhost/api", {
+      method: "POST",
+      body: "{}",
+      headers: { "content-length": "40000" },
+    });
+    const result = await readJsonBody(req);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.response.status).toBe(413);
+  });
+
+  it("refuses a body that cannot be read", async () => {
+    const req = new Request("http://localhost/api", { method: "POST", body: "{}" });
+    vi.spyOn(req, "text").mockRejectedValue(new Error("stream closed"));
+    const result = await readJsonBody(req);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.response.status).toBe(400);
+  });
+
   it("refuses a body over 32 KB with a 413", async () => {
     const result = await readJsonBody(request(JSON.stringify({ pad: "x".repeat(33_000) })));
     expect(result.ok).toBe(false);

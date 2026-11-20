@@ -3,7 +3,7 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   // Components use the automatic JSX runtime. Next handles this itself in the app.
-  esbuild: { jsx: "automatic" },
+  oxc: { jsx: { runtime: "automatic" } },
   test: {
     globals: true,
     environment: "node",
@@ -18,7 +18,11 @@ export default defineConfig({
         "src/i18n/**",
         "src/components/**",
         "src/app/api/**",
+        "src/app/page.tsx",
       ],
+      // Type declarations have no runtime code to cover.
+      exclude: ["src/domain/types.ts"],
+      thresholds: { statements: 90, lines: 90, functions: 85, branches: 80 },
     },
   },
   resolve: {

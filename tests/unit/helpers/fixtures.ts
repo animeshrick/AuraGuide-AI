@@ -32,9 +32,7 @@ export function makeHourly(
   });
 }
 
-export function makeAirQuality(
-  overrides: Partial<CurrentAirQuality> = {}
-): CurrentAirQuality {
+export function makeAirQuality(overrides: Partial<CurrentAirQuality> = {}): CurrentAirQuality {
   const hourly = overrides.hourly ?? makeHourly();
   const first = hourly[0];
   const { primaryPollutant } = calculateAQI(first.pm25, first.pm10);

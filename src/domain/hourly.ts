@@ -4,9 +4,7 @@ import { HourlyAirQuality } from "./types";
  * Index a rolling 24-hour forecast by local hour of day. If an hour appears
  * twice, the first (nearest in time) entry wins.
  */
-export function indexByHour(
-  hourly: readonly HourlyAirQuality[]
-): Map<number, HourlyAirQuality> {
+export function indexByHour(hourly: readonly HourlyAirQuality[]): Map<number, HourlyAirQuality> {
   const map = new Map<number, HourlyAirQuality>();
   for (const entry of hourly) {
     if (!map.has(entry.hour)) map.set(entry.hour, entry);

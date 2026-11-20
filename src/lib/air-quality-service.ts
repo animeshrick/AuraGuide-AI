@@ -2,8 +2,7 @@ import { CurrentAirQuality } from "@/domain/types";
 import { buildModelledAirQuality, fetchAirQuality, geocodeCity } from "./open-meteo";
 
 export type AirQualityLookup =
-  | { ok: true; airQuality: CurrentAirQuality }
-  | { ok: false; reason: "city_not_found" };
+  { ok: true; airQuality: CurrentAirQuality } | { ok: false; reason: "city_not_found" };
 
 /**
  * One place that turns a city (and optional coordinates) into air quality data,

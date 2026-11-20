@@ -24,14 +24,14 @@ export const viewport: Viewport = {
   themeColor: "#0369a1",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="antialiased min-h-screen flex flex-col">{children}</body>
+    // Browser extensions such as Dark Reader add attributes to these tags before React loads,
+    // which would otherwise raise a hydration warning in development.
+    <html lang="en" suppressHydrationWarning>
+      <body className="antialiased min-h-screen flex flex-col" suppressHydrationWarning>
+        {children}
+      </body>
     </html>
   );
 }

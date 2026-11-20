@@ -11,6 +11,7 @@ export const COMMUTE_MODE_LABELS: Record<CommuteMode, string> = {
   car_ice: "petrol or diesel car",
   car_ev: "electric car",
   work_from_home: "working from home",
+  homemaker: "running the home",
 };
 
 export function formatHour(hour: number): string {

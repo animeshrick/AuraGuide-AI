@@ -55,7 +55,10 @@ function calculateSubIndex(concentration: number, breakpoints: Breakpoint[]): nu
   return 0;
 }
 
-export function calculateAQI(pm25: number, pm10: number = 0): {
+export function calculateAQI(
+  pm25: number,
+  pm10: number = 0
+): {
   aqi: number;
   category: AQICategory;
   primaryPollutant: "PM2.5" | "PM10";

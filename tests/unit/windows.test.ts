@@ -52,7 +52,11 @@ describe("findSafeWindows", () => {
 
   it("returns a window for each kind of outing, each as long as its rule says", () => {
     const windows = findSafeWindows(hourly);
-    expect(windows.map((w) => w.activity).sort()).toEqual(["exercise", "school_run", "ventilation"]);
+    expect(windows.map((w) => w.activity).sort()).toEqual([
+      "exercise",
+      "school_run",
+      "ventilation",
+    ]);
 
     for (const w of windows) {
       const rule = WINDOW_RULES[w.activity as keyof typeof WINDOW_RULES];

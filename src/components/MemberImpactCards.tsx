@@ -36,10 +36,7 @@ export const MemberImpactCards: React.FC<MemberImpactCardsProps> = ({ impacts, d
                 </p>
               </div>
 
-              <div
-                className="h-2 rounded-full bg-slate-200 overflow-hidden"
-                aria-hidden="true"
-              >
+              <div className="h-2 rounded-full bg-slate-200 overflow-hidden" aria-hidden="true">
                 <div className="h-full bg-emerald-600 rounded-full" style={{ width: `${pct}%` }} />
               </div>
 

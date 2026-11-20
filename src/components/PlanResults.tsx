@@ -7,10 +7,12 @@ import { CommunityAdvisory } from "./CommunityAdvisory";
 import { EmissionsPanel } from "./EmissionsPanel";
 import { HourlyAQIChart } from "./HourlyAQIChart";
 import { ImpactSummary } from "./ImpactSummary";
+import { GoingOutPanel } from "./GoingOutPanel";
 import { IndoorAirPanel } from "./IndoorAirPanel";
 import { MemberImpactCards } from "./MemberImpactCards";
 import { SafeWindowTimeline } from "./SafeWindowTimeline";
 import { StatusBanner } from "./StatusBanner";
+import { PlantsPanel } from "./PlantsPanel";
 import { WhatIfPanel } from "./WhatIfPanel";
 import { CARD } from "./styles";
 
@@ -48,8 +50,12 @@ export const PlanResults: React.FC<PlanResultsProps> = ({
 
       {(showModelledNotice || showFallbackNotice || isUpdating) && (
         <div className="space-y-3">
-          {showModelledNotice && <StatusBanner tone="warning">{dict.banners.modelled}</StatusBanner>}
-          {showFallbackNotice && <StatusBanner tone="info">{dict.banners.fallbackPlan}</StatusBanner>}
+          {showModelledNotice && (
+            <StatusBanner tone="warning">{dict.banners.modelled}</StatusBanner>
+          )}
+          {showFallbackNotice && (
+            <StatusBanner tone="info">{dict.banners.fallbackPlan}</StatusBanner>
+          )}
           {showEnglishOnlyNotice && (
             <StatusBanner tone="info">{dict.banners.englishOnly}</StatusBanner>
           )}
@@ -64,6 +70,7 @@ export const PlanResults: React.FC<PlanResultsProps> = ({
       <MemberImpactCards impacts={plan.memberImpacts} dict={dict} />
       <EmissionsPanel impact={plan.emissionImpact} dict={dict} />
       <IndoorAirPanel advice={plan.indoorAir} dict={dict} />
+      <PlantsPanel profile={profile} dict={dict} />
 
       {plan.communityTip && (
         <aside className={`${CARD} flex items-start gap-3`}>
@@ -77,6 +84,7 @@ export const PlanResults: React.FC<PlanResultsProps> = ({
         </aside>
       )}
 
+      <GoingOutPanel profile={profile} hourly={plan.airQuality.hourly} dict={dict} />
       <WhatIfPanel profile={profile} language={language} dict={dict} />
       <CommunityAdvisory city={plan.city} language={language} dict={dict} />
 

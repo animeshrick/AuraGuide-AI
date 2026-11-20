@@ -1,6 +1,7 @@
 import { computeEngineFacts, EngineFacts, toPlanAirQuality } from "./engine";
 import { indexByHour } from "./hourly";
 import { COMMUTE_MODE_LABELS, formatHour, formatHourRange } from "./labels";
+import { staysAtHome } from "./modes";
 import { effectiveAQI } from "./protection";
 import { summarizePlan } from "./summary";
 import {
@@ -81,7 +82,7 @@ export function buildFallbackSchedule(
   }
 
   // 2. Commutes: enclosed transport plus a fitted N95.
-  const commuters = profile.members.filter((m) => m.commuteMode !== "work_from_home");
+  const commuters = profile.members.filter((m) => !staysAtHome(m.commuteMode));
   if (commuters.length > 0) {
     const describe = commuters
       .map((m) => `${shortName(m)} by ${COMMUTE_MODE_LABELS[m.commuteMode]}`)

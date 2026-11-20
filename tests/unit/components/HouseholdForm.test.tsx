@@ -103,9 +103,12 @@ describe("HouseholdForm", () => {
 
     it("stops at ten members", async () => {
       const { user } = setup();
-      for (let i = 0; i < 8; i++) await user.click(screen.getByRole("button", { name: "Add member" }));
+      for (let i = 0; i < 8; i++)
+        await user.click(screen.getByRole("button", { name: "Add member" }));
       expect(memberItems()).toHaveLength(10);
-      expect((screen.getByRole("button", { name: "Add member" }) as HTMLButtonElement).disabled).toBe(true);
+      expect(
+        (screen.getByRole("button", { name: "Add member" }) as HTMLButtonElement).disabled
+      ).toBe(true);
     });
 
     it("removes a member, but never the last one", async () => {
@@ -154,14 +157,18 @@ describe("HouseholdForm", () => {
 
       await user.click(cardiac);
       expect(cardiac.getAttribute("aria-pressed")).toBe("true");
-      expect(within(first).getByRole("button", { name: "None" }).getAttribute("aria-pressed")).toBe("false");
+      expect(within(first).getByRole("button", { name: "None" }).getAttribute("aria-pressed")).toBe(
+        "false"
+      );
     });
 
     it("goes back to None when the last sensitivity is switched off", async () => {
       const { user } = setup();
       const second = memberItems()[1]; // starts with asthma
       await user.click(within(second).getByRole("button", { name: "Asthma or lung condition" }));
-      expect(within(second).getByRole("button", { name: "None" }).getAttribute("aria-pressed")).toBe("true");
+      expect(
+        within(second).getByRole("button", { name: "None" }).getAttribute("aria-pressed")
+      ).toBe("true");
     });
 
     it("clears the others when None is chosen", async () => {
@@ -169,8 +176,14 @@ describe("HouseholdForm", () => {
       const second = memberItems()[1];
       await user.click(within(second).getByRole("button", { name: "Elderly (60+)" }));
       await user.click(within(second).getByRole("button", { name: "None" }));
-      expect(within(second).getByRole("button", { name: "Elderly (60+)" }).getAttribute("aria-pressed")).toBe("false");
-      expect(within(second).getByRole("button", { name: "Asthma or lung condition" }).getAttribute("aria-pressed")).toBe("false");
+      expect(
+        within(second).getByRole("button", { name: "Elderly (60+)" }).getAttribute("aria-pressed")
+      ).toBe("false");
+      expect(
+        within(second)
+          .getByRole("button", { name: "Asthma or lung condition" })
+          .getAttribute("aria-pressed")
+      ).toBe("false");
     });
   });
 
@@ -233,5 +246,126 @@ describe("HouseholdForm", () => {
   it("has no accessibility violations", async () => {
     const { container } = setup();
     expect(await accessibilityProblems(container)).toEqual([]);
+  });
+});
+
+describe("HouseholdForm: new members, homemakers and chips", () => {
+  it("moves the cursor to the name of a member that was just added", async () => {
+    const { user } = setup();
+    await user.click(screen.getByRole("button", { name: "Add member" }));
+
+    const names = screen.getAllByLabelText("Name");
+    expect(names).toHaveLength(3);
+    expect(document.activeElement).toBe(names[2]);
+  });
+
+  it("offers a homemaker option under a stays-at-home group", () => {
+    setup();
+    const first = memberItems()[0];
+    const select = within(first).getByLabelText("How they travel") as HTMLSelectElement;
+
+    const homemaker = within(select).getByRole("option", { name: /Homemaker/ });
+    expect((homemaker as HTMLOptionElement).value).toBe("homemaker");
+    expect(homemaker.parentElement?.getAttribute("label")).toBe("Stays at home");
+    expect(within(select).getByRole("option", { name: /Stays home/ })).toBeTruthy();
+  });
+
+  it("hides distance and time for a homemaker, and sends zeros", async () => {
+    const { onSubmit, user } = setup();
+    const first = memberItems()[0];
+    await user.selectOptions(within(first).getByLabelText("How they travel"), "homemaker");
+
+    expect(within(first).queryByLabelText(/Distance one way/)).toBeNull();
+    expect(within(first).queryByLabelText(/Time one way/)).toBeNull();
+
+    await user.click(submitButton());
+    const member = onSubmit.mock.calls[0][0].members[0];
+    expect(member.commuteMode).toBe("homemaker");
+    expect(member.commuteDistanceKm).toBe(0);
+    expect(member.commuteTimeMinutes).toBe(0);
+  });
+
+  it("shows the commute fields again when a homemaker starts travelling", async () => {
+    const { user } = setup();
+    const first = memberItems()[0];
+    const select = within(first).getByLabelText("How they travel");
+    await user.selectOptions(select, "homemaker");
+    await user.selectOptions(select, "bus");
+    expect(within(first).getByLabelText(/Distance one way/)).toBeTruthy();
+  });
+
+  it("marks a selected health chip with a check, and removes it when cleared", async () => {
+    const { user } = setup();
+    const first = memberItems()[0];
+    const asthma = within(first).getByRole("button", { name: "Asthma or lung condition" });
+    expect(asthma.querySelector("svg")).toBeNull();
+
+    await user.click(asthma);
+    expect(asthma.getAttribute("aria-pressed")).toBe("true");
+    expect(asthma.querySelector("svg")).not.toBeNull();
+
+    await user.click(asthma);
+    expect(asthma.getAttribute("aria-pressed")).toBe("false");
+    expect(asthma.querySelector("svg")).toBeNull();
+  });
+
+  it("has no accessibility problems with the grouped travel list", async () => {
+    const { container } = setup();
+    expect(await accessibilityProblems(container)).toEqual([]);
+  });
+});
+
+describe("HouseholdForm: smoking or vaping question", () => {
+  it("is an optional checkbox for every member, unchecked at the start", () => {
+    setup();
+    const boxes = screen.getAllByRole("checkbox", { name: /Smokes or vapes \(optional\)/ });
+    expect(boxes).toHaveLength(2);
+    for (const box of boxes) expect((box as HTMLInputElement).checked).toBe(false);
+    expect(screen.getAllByText(/Leave it blank if you prefer/)).toHaveLength(2);
+  });
+
+  it("does not stop the form from being sent when it is left alone", async () => {
+    const { onSubmit, user } = setup();
+    await user.click(submitButton());
+    const members = onSubmit.mock.calls[0][0].members;
+    for (const member of members) expect(member.smokes).toBeUndefined();
+  });
+
+  it("is sent as true for the member it was ticked for, and for nobody else", async () => {
+    const { onSubmit, user } = setup();
+    const first = memberItems()[0];
+    await user.click(within(first).getByRole("checkbox", { name: /Smokes or vapes/ }));
+
+    await user.click(submitButton());
+    const [one, two] = onSubmit.mock.calls[0][0].members;
+    expect(one.smokes).toBe(true);
+    expect(two.smokes).toBeUndefined();
+  });
+
+  it("goes back to not answered when it is unticked", async () => {
+    const { onSubmit, user } = setup();
+    const first = memberItems()[0];
+    const box = within(first).getByRole("checkbox", { name: /Smokes or vapes/ });
+    await user.click(box);
+    await user.click(box);
+
+    await user.click(submitButton());
+    expect(onSubmit.mock.calls[0][0].members[0].smokes).toBeUndefined();
+  });
+
+  it("starts ticked for a household that already said so", () => {
+    setup({
+      initialProfile: makeProfile({ members: [makeMember({ name: "Manoj", smokes: true })] }),
+    });
+    expect(
+      (screen.getByRole("checkbox", { name: /Smokes or vapes/ }) as HTMLInputElement).checked
+    ).toBe(true);
+  });
+
+  it("is labelled in Hindi", () => {
+    setup({ language: "hi" });
+    expect(screen.getAllByRole("checkbox", { name: /धूम्रपान या वेप करते हैं/ }).length).toBeGreaterThan(
+      0
+    );
   });
 });

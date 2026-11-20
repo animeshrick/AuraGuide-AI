@@ -11,12 +11,12 @@ const config: Config = {
       colors: {
         // India National AQI Bands
         aqi: {
-          good: "#059669",        // 0 - 50 (Green)
-          satisfactory: "#65a30d",// 51 - 100 (Light Green)
-          moderate: "#d97706",    // 101 - 200 (Yellow / Orange)
-          poor: "#ea580c",        // 201 - 300 (Orange / Red-Orange)
-          verypoor: "#dc2626",    // 301 - 400 (Red)
-          severe: "#7f1d1d",      // 401 - 500+ (Dark Maroon / Purple)
+          good: "#059669", // 0 - 50 (Green)
+          satisfactory: "#65a30d", // 51 - 100 (Light Green)
+          moderate: "#d97706", // 101 - 200 (Yellow / Orange)
+          poor: "#ea580c", // 201 - 300 (Orange / Red-Orange)
+          verypoor: "#dc2626", // 301 - 400 (Red)
+          severe: "#7f1d1d", // 401 - 500+ (Dark Maroon / Purple)
         },
       },
     },

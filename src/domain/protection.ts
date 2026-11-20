@@ -1,9 +1,5 @@
 import { calculateAQI } from "./aqi";
-import {
-  COMMUTE_AMBIENT_FACTOR,
-  INFILTRATION_FACTORS,
-  N95_PENETRATION,
-} from "./factors";
+import { COMMUTE_AMBIENT_FACTOR, INFILTRATION_FACTORS, N95_PENETRATION } from "./factors";
 import { HourlyAirQuality, ScheduleActionType } from "./types";
 
 /**
@@ -14,10 +10,7 @@ import { HourlyAirQuality, ScheduleActionType } from "./types";
  * - indoor_protection: windows closed, plus the purifier when the home has one
  * - purifier_timing: closed windows with the purifier running
  */
-export function protectionFactor(
-  action: ScheduleActionType,
-  hasPurifier: boolean
-): number | null {
+export function protectionFactor(action: ScheduleActionType, hasPurifier: boolean): number | null {
   switch (action) {
     case "mode_swap":
       return COMMUTE_AMBIENT_FACTOR.metro * N95_PENETRATION;
@@ -27,10 +20,7 @@ export function protectionFactor(
         (hasPurifier ? INFILTRATION_FACTORS.with_hepa_purifier : 1)
       );
     case "purifier_timing":
-      return (
-        INFILTRATION_FACTORS.standard_closed_windows *
-        INFILTRATION_FACTORS.with_hepa_purifier
-      );
+      return INFILTRATION_FACTORS.standard_closed_windows * INFILTRATION_FACTORS.with_hepa_purifier;
     case "schedule_shift":
       return null;
   }

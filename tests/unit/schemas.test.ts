@@ -10,7 +10,8 @@ import { makeMember, makeProfile } from "./helpers/fixtures";
 
 describe("HouseholdProfileSchema", () => {
   it("accepts a normal household and fills in the default language", () => {
-    const { language: _language, ...withoutLanguage } = makeProfile();
+    const withoutLanguage: Partial<ReturnType<typeof makeProfile>> = makeProfile();
+    delete withoutLanguage.language;
     const result = HouseholdProfileSchema.safeParse(withoutLanguage);
     expect(result.success).toBe(true);
     if (result.success) expect(result.data.language).toBe("en");
@@ -62,17 +63,29 @@ describe("request schemas", () => {
   it("what-if needs a question of reasonable length", () => {
     const profile = makeProfile();
     expect(WhatIfRequestSchema.safeParse({ profile, question: "hi" }).success).toBe(false);
-    expect(WhatIfRequestSchema.safeParse({ profile, question: "x".repeat(301) }).success).toBe(false);
-    expect(WhatIfRequestSchema.safeParse({ profile, question: "What if I cycle?" }).success).toBe(true);
+    expect(WhatIfRequestSchema.safeParse({ profile, question: "x".repeat(301) }).success).toBe(
+      false
+    );
+    expect(WhatIfRequestSchema.safeParse({ profile, question: "What if I cycle?" }).success).toBe(
+      true
+    );
+  });
+
+  it("what-if accepts a tapped travel mode, and only a real one", () => {
+    const profile = makeProfile();
+    const ok = WhatIfRequestSchema.safeParse({ profile, question: "What if?", toMode: "metro" });
+    expect(ok.success).toBe(true);
+    const bad = WhatIfRequestSchema.safeParse({ profile, question: "What if?", toMode: "jetpack" });
+    expect(bad.success).toBe(false);
   });
 
   it("advisory only accepts known audiences", () => {
-    expect(
-      AdvisoryRequestSchema.safeParse({ city: "Delhi", audience: "everyone" }).success
-    ).toBe(false);
-    expect(
-      AdvisoryRequestSchema.safeParse({ city: "Delhi", audience: "school" }).success
-    ).toBe(true);
+    expect(AdvisoryRequestSchema.safeParse({ city: "Delhi", audience: "everyone" }).success).toBe(
+      false
+    );
+    expect(AdvisoryRequestSchema.safeParse({ city: "Delhi", audience: "school" }).success).toBe(
+      true
+    );
   });
 });
 
@@ -100,7 +113,12 @@ describe("Gemini response schema", () => {
 
   it("never asks the model for numbers the engine computes", () => {
     const text = JSON.stringify(GEMINI_PLAN_RESPONSE_SCHEMA);
-    for (const field of ["normalAQI", "optimizedAQI", "exposureAvoidedPercentage", "savedEmissionsKg"]) {
+    for (const field of [
+      "normalAQI",
+      "optimizedAQI",
+      "exposureAvoidedPercentage",
+      "savedEmissionsKg",
+    ]) {
       expect(text).not.toContain(field);
     }
   });

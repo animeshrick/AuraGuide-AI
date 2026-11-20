@@ -1,0 +1,364 @@
+{
+  "isFallback": true,
+  "city": "New Delhi",
+  "currentAQI": 377,
+  "currentCategory": "Very Poor",
+  "summary": "Air quality in New Delhi is Very Poor (AQI 377, mainly PM2.5). Following this plan lowers the household's estimated exposure by about 67% and saves 5.08 kg CO2e of commute emissions today.",
+  "airQuality": {
+    "source": "open-meteo",
+    "updatedAt": "2026-11-19T00:30:00.000Z",
+    "pm25": 220,
+    "pm10": 352,
+    "primaryPollutant": "PM2.5",
+    "hourly": [
+      {
+        "time": "2026-11-19T06:00",
+        "hour": 6,
+        "pm25": 220,
+        "pm10": 352,
+        "aqi": 377,
+        "category": "Very Poor"
+      },
+      {
+        "time": "2026-11-19T07:00",
+        "hour": 7,
+        "pm25": 220,
+        "pm10": 352,
+        "aqi": 377,
+        "category": "Very Poor"
+      },
+      {
+        "time": "2026-11-19T08:00",
+        "hour": 8,
+        "pm25": 220,
+        "pm10": 352,
+        "aqi": 377,
+        "category": "Very Poor"
+      },
+      {
+        "time": "2026-11-19T09:00",
+        "hour": 9,
+        "pm25": 220,
+        "pm10": 352,
+        "aqi": 377,
+        "category": "Very Poor"
+      },
+      {
+        "time": "2026-11-19T10:00",
+        "hour": 10,
+        "pm25": 220,
+        "pm10": 352,
+        "aqi": 377,
+        "category": "Very Poor"
+      },
+      {
+        "time": "2026-11-19T11:00",
+        "hour": 11,
+        "pm25": 120,
+        "pm10": 192,
+        "aqi": 300,
+        "category": "Poor"
+      },
+      {
+        "time": "2026-11-19T12:00",
+        "hour": 12,
+        "pm25": 60,
+        "pm10": 96,
+        "aqi": 100,
+        "category": "Satisfactory"
+      },
+      {
+        "time": "2026-11-19T13:00",
+        "hour": 13,
+        "pm25": 60,
+        "pm10": 96,
+        "aqi": 100,
+        "category": "Satisfactory"
+      },
+      {
+        "time": "2026-11-19T14:00",
+        "hour": 14,
+        "pm25": 60,
+        "pm10": 96,
+        "aqi": 100,
+        "category": "Satisfactory"
+      },
+      {
+        "time": "2026-11-19T15:00",
+        "hour": 15,
+        "pm25": 60,
+        "pm10": 96,
+        "aqi": 100,
+        "category": "Satisfactory"
+      },
+      {
+        "time": "2026-11-19T16:00",
+        "hour": 16,
+        "pm25": 60,
+        "pm10": 96,
+        "aqi": 100,
+        "category": "Satisfactory"
+      },
+      {
+        "time": "2026-11-19T17:00",
+        "hour": 17,
+        "pm25": 200,
+        "pm10": 320,
+        "aqi": 362,
+        "category": "Very Poor"
+      },
+      {
+        "time": "2026-11-19T18:00",
+        "hour": 18,
+        "pm25": 200,
+        "pm10": 320,
+        "aqi": 362,
+        "category": "Very Poor"
+      },
+      {
+        "time": "2026-11-19T19:00",
+        "hour": 19,
+        "pm25": 200,
+        "pm10": 320,
+        "aqi": 362,
+        "category": "Very Poor"
+      },
+      {
+        "time": "2026-11-19T20:00",
+        "hour": 20,
+        "pm25": 200,
+        "pm10": 320,
+        "aqi": 362,
+        "category": "Very Poor"
+      },
+      {
+        "time": "2026-11-19T21:00",
+        "hour": 21,
+        "pm25": 200,
+        "pm10": 320,
+        "aqi": 362,
+        "category": "Very Poor"
+      },
+      {
+        "time": "2026-11-19T22:00",
+        "hour": 22,
+        "pm25": 200,
+        "pm10": 320,
+        "aqi": 362,
+        "category": "Very Poor"
+      },
+      {
+        "time": "2026-11-19T23:00",
+        "hour": 23,
+        "pm25": 120,
+        "pm10": 192,
+        "aqi": 300,
+        "category": "Poor"
+      },
+      {
+        "time": "2026-11-20T00:00",
+        "hour": 0,
+        "pm25": 120,
+        "pm10": 192,
+        "aqi": 300,
+        "category": "Poor"
+      },
+      {
+        "time": "2026-11-20T01:00",
+        "hour": 1,
+        "pm25": 120,
+        "pm10": 192,
+        "aqi": 300,
+        "category": "Poor"
+      },
+      {
+        "time": "2026-11-20T02:00",
+        "hour": 2,
+        "pm25": 120,
+        "pm10": 192,
+        "aqi": 300,
+        "category": "Poor"
+      },
+      {
+        "time": "2026-11-20T03:00",
+        "hour": 3,
+        "pm25": 120,
+        "pm10": 192,
+        "aqi": 300,
+        "category": "Poor"
+      },
+      {
+        "time": "2026-11-20T04:00",
+        "hour": 4,
+        "pm25": 120,
+        "pm10": 192,
+        "aqi": 300,
+        "category": "Poor"
+      },
+      {
+        "time": "2026-11-20T05:00",
+        "hour": 5,
+        "pm25": 120,
+        "pm10": 192,
+        "aqi": 300,
+        "category": "Poor"
+      }
+    ]
+  },
+  "safeWindows": [
+    {
+      "activity": "school_run",
+      "startHour": 6,
+      "endHour": 8,
+      "averageAQI": 377,
+      "category": "Very Poor",
+      "recommendation": "Morning air is very unhealthy even in the best slot (06:00 - 08:00). Use an enclosed vehicle with windows up and a fitted N95 for each child."
+    },
+    {
+      "activity": "exercise",
+      "startHour": 12,
+      "endHour": 13,
+      "averageAQI": 100,
+      "category": "Satisfactory",
+      "recommendation": "12:00 - 13:00 is the best hour for a brisk walk or outdoor play."
+    },
+    {
+      "activity": "ventilation",
+      "startHour": 12,
+      "endHour": 14,
+      "averageAQI": 100,
+      "category": "Satisfactory",
+      "recommendation": "Open windows for fresh air around 12:00 - 14:00."
+    }
+  ],
+  "memberImpacts": [
+    {
+      "memberId": "m1",
+      "memberName": "Rajesh",
+      "baselineExposureDose": 1493,
+      "optimizedExposureDose": 639,
+      "exposureAvoidedPercentage": 57,
+      "keyChanges": [
+        "Skip incense and mosquito coils indoors on smog days.",
+        "Run a HEPA air purifier in the room where you spend most time, or keep one room sealed.",
+        "Switch from petrol or diesel car to metro and wear a fitted N95 mask."
+      ]
+    },
+    {
+      "memberId": "m2",
+      "memberName": "Sunita",
+      "baselineExposureDose": 3382,
+      "optimizedExposureDose": 1416,
+      "exposureAvoidedPercentage": 58,
+      "keyChanges": [
+        "Skip incense and mosquito coils indoors on smog days.",
+        "Run a HEPA air purifier in the room where you spend most time, or keep one room sealed.",
+        "Switch from auto-rickshaw to metro and wear a fitted N95 mask.",
+        "Move \"Morning yoga\" from 07:00 to 12:00, when the air is cleaner."
+      ]
+    },
+    {
+      "memberId": "m3",
+      "memberName": "Aarav",
+      "baselineExposureDose": 3795,
+      "optimizedExposureDose": 781,
+      "exposureAvoidedPercentage": 79,
+      "keyChanges": [
+        "Skip incense and mosquito coils indoors on smog days.",
+        "Run a HEPA air purifier in the room where you spend most time, or keep one room sealed.",
+        "Move \"Park play\" from 10:00 to 12:00, when the air is cleaner."
+      ]
+    }
+  ],
+  "emissionImpact": {
+    "baselineEmissionsKg": 5.72,
+    "optimizedEmissionsKg": 0.64,
+    "savedEmissionsKg": 5.08,
+    "modeSwaps": [
+      {
+        "from": "car_ice",
+        "to": "metro",
+        "savedKg": 4.45
+      },
+      {
+        "from": "auto_rickshaw",
+        "to": "metro",
+        "savedKg": 0.62
+      }
+    ]
+  },
+  "schedule": [
+    {
+      "hour": 7,
+      "timeLabel": "07:00 - 08:00",
+      "normalActivity": "Sunita: Morning yoga",
+      "normalAQI": 377,
+      "optimizedActivity": "Move to 12:00, when the air is cleaner, and keep it light.",
+      "optimizedAQI": 100,
+      "rationale": "Particle levels change through the day. This hour is the cleanest slot for outdoor activity.",
+      "targetMember": "Sunita",
+      "actionType": "schedule_shift"
+    },
+    {
+      "hour": 8,
+      "timeLabel": "08:00 - 09:00",
+      "normalActivity": "Morning commute: Rajesh by petrol or diesel car, Sunita by auto-rickshaw",
+      "normalAQI": 377,
+      "optimizedActivity": "Use the metro or another enclosed ride where you can, and wear a fitted N95 mask.",
+      "optimizedAQI": 104,
+      "rationale": "Open-road travel can expose you to more particles than the air around you. Enclosed transport and a fitted N95 cut what you breathe in.",
+      "actionType": "mode_swap"
+    },
+    {
+      "hour": 10,
+      "timeLabel": "10:00 - 11:00",
+      "normalActivity": "Aarav: Park play",
+      "normalAQI": 377,
+      "optimizedActivity": "Move to 12:00, when the air is cleaner, and keep it light.",
+      "optimizedAQI": 100,
+      "rationale": "Particle levels change through the day. This hour is the cleanest slot for outdoor activity.",
+      "targetMember": "Aarav",
+      "actionType": "schedule_shift"
+    },
+    {
+      "hour": 12,
+      "timeLabel": "12:00 - 14:00",
+      "normalActivity": "Open the windows first thing in the morning",
+      "normalAQI": 377,
+      "optimizedActivity": "Open windows only around 12:00 - 14:00, then close them.",
+      "optimizedAQI": 100,
+      "rationale": "This is the cleanest stretch of the day for letting outside air in.",
+      "actionType": "indoor_protection"
+    },
+    {
+      "hour": 18,
+      "timeLabel": "18:00 - 19:00",
+      "normalActivity": "Evening commute: Rajesh by petrol or diesel car, Sunita by auto-rickshaw",
+      "normalAQI": 362,
+      "optimizedActivity": "Use the metro or another enclosed ride where you can, and wear a fitted N95 mask.",
+      "optimizedAQI": 93,
+      "rationale": "Evening traffic and a falling air layer push particle levels up near the road. Combine errands into one trip.",
+      "actionType": "mode_swap"
+    },
+    {
+      "hour": 22,
+      "timeLabel": "22:00 - 24:00",
+      "normalActivity": "Sleeping with the room open to outside air (outdoor AQI shown)",
+      "normalAQI": 362,
+      "optimizedActivity": "Close doors and windows, wet-mop the floor, and consider a HEPA purifier for the bedroom.",
+      "optimizedAQI": 308,
+      "rationale": "You spend about a third of the day asleep, so cleaner bedroom air lowers the daily total.",
+      "actionType": "indoor_protection"
+    }
+  ],
+  "indoorAir": {
+    "cookingAdvice": "Keep the kitchen exhaust fan on while cooking and close the kitchen door so oil mist and combustion particles do not spread through the house.",
+    "ventilationWindow": "Open windows only around 12:00 - 14:00. Open windows for fresh air around 12:00 - 14:00.",
+    "purifierStrategy": "You have no purifier. Keep one room as a clean room: seal gaps, wet-mop instead of sweeping, and consider a HEPA purifier for the bedroom.",
+    "hazardWarnings": [
+      "Incense and mosquito coils release fine particles and irritant gases indoors. Skip them on smog days, or burn them near an open window.",
+      "Avoid hard outdoor exercise in the early morning and evening, when ground-level particle levels are usually highest."
+    ]
+  },
+  "communityTip": "Ask your housing society or school to stop open burning of leaves and waste, and to organise carpools for the morning run."
+}

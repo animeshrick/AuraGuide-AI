@@ -142,12 +142,7 @@ export default function HomePage() {
         hasPlan={plan !== null}
       />
 
-      <main
-        id="main-content"
-        ref={mainRef}
-        tabIndex={-1}
-        className="flex-1 outline-none"
-      >
+      <main id="main-content" ref={mainRef} tabIndex={-1} className="flex-1 outline-none">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
           {error && (
             <StatusBanner

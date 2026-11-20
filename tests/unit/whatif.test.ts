@@ -59,7 +59,10 @@ describe("pickMember", () => {
 
   it("does not match a name inside another word", () => {
     const tricky = makeProfile({
-      members: [makeMember({ id: "a", name: "Al", commuteMode: "bus" }), makeMember({ id: "b", name: "Bo" })],
+      members: [
+        makeMember({ id: "a", name: "Al", commuteMode: "bus" }),
+        makeMember({ id: "b", name: "Bo" }),
+      ],
     });
     expect(pickMember(tricky, "what about the metro, all of us?").id).toBe("a");
   });
@@ -126,6 +129,35 @@ describe("runWhatIf", () => {
   });
 });
 
+describe("runWhatIf with a chosen mode", () => {
+  const hourly = makeHourly(6);
+  const profile = makeProfile();
+
+  it("uses the chosen mode and ignores what the question says", () => {
+    const outcome = runWhatIf(profile, hourly, "What if I cycle?", "m1", "metro");
+    expect(outcome).toMatchObject({ matched: true, toMode: "metro" });
+  });
+
+  it("works when the question names no mode at all", () => {
+    const outcome = runWhatIf(profile, hourly, "What if Rajesh changed to: Bus?", "m1", "bus");
+    expect(outcome).toMatchObject({ matched: true, toMode: "bus" });
+  });
+
+  it("still says when the chosen mode is the one already used", () => {
+    expect(runWhatIf(profile, hourly, "anything", "m1", "car_ice")).toMatchObject({
+      matched: false,
+      reason: "same_mode",
+    });
+  });
+
+  it("still says when the person does not travel", () => {
+    expect(runWhatIf(profile, hourly, "anything", "m3", "metro")).toMatchObject({
+      matched: false,
+      reason: "no_commute",
+    });
+  });
+});
+
 describe("explainWhatIfWithRules", () => {
   const hourly = makeHourly(6);
   const profile = makeProfile();
@@ -137,6 +169,15 @@ describe("explainWhatIfWithRules", () => {
     expect(text).toContain("Rajesh");
     expect(text).toContain(String(outcome.householdBaselineEmissionsKg));
     expect(text).toContain(String(outcome.householdRecalculatedEmissionsKg));
+  });
+
+  it("uses everyday words instead of technical terms", () => {
+    const outcome = runWhatIf(profile, hourly, "What if I take the metro instead?", "m1");
+    if (!outcome.matched) throw new Error("expected a match");
+    const text = explainWhatIfWithRules(outcome, 250);
+    expect(text).toMatch(/breathes in/);
+    expect(text).toMatch(/Fumes from travel/);
+    expect(text).not.toMatch(/PM2\.5|exposure|CO2e|emissions/i);
   });
 
   it("warns that walking or cycling in very bad air raises the dose", () => {

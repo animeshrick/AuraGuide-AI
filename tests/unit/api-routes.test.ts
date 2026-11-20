@@ -130,9 +130,7 @@ describe("POST /api/plan", () => {
   });
 
   it("reports the plan's own air quality, even if the browser claimed another", async () => {
-    const body = await (
-      await planPOST(post("/api/plan", { ...profile, currentAQI: 1 }))
-    ).json();
+    const body = await (await planPOST(post("/api/plan", { ...profile, currentAQI: 1 }))).json();
     expect(body.currentAQI).toBe(airQuality.aqi);
   });
 
@@ -166,6 +164,27 @@ describe("POST /api/whatif", () => {
     expect(body.explanation).toBe("Metro is cleaner.");
     expect(body.explanationSource).toBe("gemini");
     expect(body.currentAQI).toBe(airQuality.aqi);
+  });
+
+  it("uses a tapped travel mode even when the question names none", async () => {
+    const body = await (
+      await whatifPOST(
+        post("/api/whatif", {
+          profile,
+          question: "What if Rajesh changed to: Bus?",
+          memberId: "m1",
+          toMode: "bus",
+        })
+      )
+    ).json();
+    expect(body).toMatchObject({ matched: true, toMode: "bus" });
+  });
+
+  it("rejects a travel mode that does not exist", async () => {
+    const res = await whatifPOST(
+      post("/api/whatif", { profile, question: "What if?", memberId: "m1", toMode: "jetpack" })
+    );
+    expect(res.status).toBe(400);
   });
 
   it("explains with rules when the AI service is unavailable", async () => {

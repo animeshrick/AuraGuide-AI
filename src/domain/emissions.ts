@@ -1,12 +1,10 @@
 import { EMISSION_FACTORS_KG_PER_KM } from "./factors";
+import { staysAtHome } from "./modes";
 import { CommuteMode, EmissionImpact, HouseholdProfile } from "./types";
 
 /** Emissions for one person's daily round trip (2 x one-way distance), unrounded. */
-export function dailyCommuteEmissionsKg(
-  oneWayDistanceKm: number,
-  mode: CommuteMode
-): number {
-  if (mode === "work_from_home") return 0;
+export function dailyCommuteEmissionsKg(oneWayDistanceKm: number, mode: CommuteMode): number {
+  if (staysAtHome(mode)) return 0;
   const dailyKm = (oneWayDistanceKm || 0) * 2;
   return dailyKm * (EMISSION_FACTORS_KG_PER_KM[mode] || 0);
 }
@@ -46,7 +44,7 @@ export function calculateEmissionImpact(profile: HouseholdProfile): EmissionImpa
   const modeSwaps: { from: CommuteMode; to: CommuteMode; savedKg: number }[] = [];
 
   for (const member of profile.members) {
-    if (member.commuteMode === "work_from_home") continue;
+    if (staysAtHome(member.commuteMode)) continue;
 
     const dailyKm = (member.commuteDistanceKm || 0) * 2;
     const baselineFactor = EMISSION_FACTORS_KG_PER_KM[member.commuteMode] || 0;

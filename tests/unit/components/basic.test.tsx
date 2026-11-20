@@ -52,8 +52,12 @@ describe("Navbar", () => {
 
   it("marks each language button with its own language for screen readers", () => {
     render(<Navbar currentLanguage="en" onLanguageChange={() => {}} />);
-    expect(screen.getByRole("button", { name: "Switch language to Hindi" }).getAttribute("lang")).toBe("hi");
-    expect(screen.getByRole("button", { name: "Switch language to Bengali" }).getAttribute("lang")).toBe("bn");
+    expect(
+      screen.getByRole("button", { name: "Switch language to Hindi" }).getAttribute("lang")
+    ).toBe("hi");
+    expect(
+      screen.getByRole("button", { name: "Switch language to Bengali" }).getAttribute("lang")
+    ).toBe("bn");
   });
 
   it("starts with a skip link to the main content", () => {
@@ -76,7 +80,9 @@ describe("Navbar", () => {
   });
 
   it("has no accessibility violations", async () => {
-    const { container } = render(<Navbar currentLanguage="en" onLanguageChange={() => {}} hasPlan onReset={() => {}} />);
+    const { container } = render(
+      <Navbar currentLanguage="en" onLanguageChange={() => {}} hasPlan onReset={() => {}} />
+    );
     expect(await accessibilityProblems(container)).toEqual([]);
   });
 });

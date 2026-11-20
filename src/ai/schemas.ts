@@ -22,6 +22,7 @@ export const CommuteModeSchema = z.enum([
   "car_ice",
   "car_ev",
   "work_from_home",
+  "homemaker",
 ]);
 
 export const CookingFuelSchema = z.enum(["lpg", "biomass", "electric"]);
@@ -37,6 +38,7 @@ export const HouseholdMemberSchema = z.object({
   name: z.string().trim().min(1).max(50),
   age: z.number().int().min(0).max(120),
   sensitivities: z.array(HealthSensitivitySchema).max(7),
+  smokes: z.boolean().optional(),
   commuteMode: CommuteModeSchema,
   commuteDistanceKm: z.number().min(0).max(200),
   commuteTimeMinutes: z.number().min(0).max(300),
@@ -271,20 +273,15 @@ export const GEMINI_PLAN_RESPONSE_SCHEMA = {
       },
     },
   },
-  required: [
-    "summary",
-    "safeWindowTips",
-    "schedule",
-    "indoorAir",
-    "communityTip",
-    "memberChanges",
-  ],
+  required: ["summary", "safeWindowTips", "schedule", "indoorAir", "communityTip", "memberChanges"],
 } as const;
 
 export const WhatIfRequestSchema = z.object({
   profile: HouseholdProfileSchema,
   question: z.string().trim().min(3).max(300),
   memberId: z.string().min(1).max(64).optional(),
+  /** A travel option the person tapped. When present it is used instead of reading the question. */
+  toMode: CommuteModeSchema.optional(),
   language: LanguageSchema.default("en"),
 });
 

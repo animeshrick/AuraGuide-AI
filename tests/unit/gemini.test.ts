@@ -157,11 +157,17 @@ describe("generateOptimizedPlanWithGemini", () => {
   it.each([
     ["a reply that is not JSON", "this is not json"],
     ["a reply with a missing field", { ...validOutput, summary: undefined }],
-    ["a reply with too few schedule items", { ...validOutput, schedule: validOutput.schedule.slice(0, 1) }],
-    ["a reply with an unknown action type", {
-      ...validOutput,
-      schedule: validOutput.schedule.map((s) => ({ ...s, actionType: "teleport" })),
-    }],
+    [
+      "a reply with too few schedule items",
+      { ...validOutput, schedule: validOutput.schedule.slice(0, 1) },
+    ],
+    [
+      "a reply with an unknown action type",
+      {
+        ...validOutput,
+        schedule: validOutput.schedule.map((s) => ({ ...s, actionType: "teleport" })),
+      },
+    ],
     ["an empty reply", ""],
   ])("returns null for %s", async (_label, value) => {
     reply(value);
@@ -206,9 +212,9 @@ describe("generateOptimizedPlanWithGemini", () => {
     const base = planCacheKey(profile, airQuality);
     expect(planCacheKey({ ...profile, language: "hi" }, airQuality)).not.toBe(base);
     expect(planCacheKey({ ...profile, hasAirPurifier: true }, airQuality)).not.toBe(base);
-    expect(
-      planCacheKey(profile, makeAirQuality({ hourly: makeHourly(6, 24, () => 30) }))
-    ).not.toBe(base);
+    expect(planCacheKey(profile, makeAirQuality({ hourly: makeHourly(6, 24, () => 30) }))).not.toBe(
+      base
+    );
     expect(planCacheKey(profile, airQuality)).toBe(base);
   });
 });
@@ -259,7 +265,9 @@ describe("text answers", () => {
     expect(await generateWhatIfAnswerWithGemini(whatIfArgs)).toBeNull();
 
     generateContent.mockRejectedValueOnce(new Error("boom"));
-    expect(await generateWhatIfAnswerWithGemini({ ...whatIfArgs, question: "Another one?" })).toBeNull();
+    expect(
+      await generateWhatIfAnswerWithGemini({ ...whatIfArgs, question: "Another one?" })
+    ).toBeNull();
   });
 
   it("writes an advisory and keeps audiences apart in the cache", async () => {
@@ -270,9 +278,9 @@ describe("text answers", () => {
     expect(await generateCommunityAdvisoryWithGemini({ ...base, audience: "school" })).toBe(
       "School notice."
     );
-    expect(await generateCommunityAdvisoryWithGemini({ ...base, audience: "housing_society" })).toBe(
-      "Society notice."
-    );
+    expect(
+      await generateCommunityAdvisoryWithGemini({ ...base, audience: "housing_society" })
+    ).toBe("Society notice.");
   });
 
   it("returns null without a key", async () => {

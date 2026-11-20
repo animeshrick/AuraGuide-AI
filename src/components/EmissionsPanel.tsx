@@ -28,7 +28,9 @@ export const EmissionsPanel: React.FC<EmissionsPanelProps> = ({ impact, dict }) 
           </dd>
         </div>
         <div className="rounded-xl bg-slate-50 border border-slate-200 p-3">
-          <dt className="text-xs font-semibold text-slate-700">{dict.results.emissionsOptimized}</dt>
+          <dt className="text-xs font-semibold text-slate-700">
+            {dict.results.emissionsOptimized}
+          </dt>
           <dd className="mt-1 font-mono font-bold text-slate-900">
             {formatMessage(dict.results.kgPerDay, { kg: formatKg(impact.optimizedEmissionsKg) })}
           </dd>

@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       details: validation.errors,
     });
   }
-  const { profile, question, memberId, language } = validation.data;
+  const { profile, question, memberId, toMode, language } = validation.data;
 
   try {
     const lookup = await resolveAirQuality(profile.city, profile.coordinates);
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     const { airQuality } = lookup;
 
     // The engine recalculates first. The model then explains the new numbers.
-    const outcome = runWhatIf(profile, airQuality.hourly, question, memberId);
+    const outcome = runWhatIf(profile, airQuality.hourly, question, memberId, toMode);
     if (!outcome.matched) {
       return apiJson({ ...outcome, question });
     }

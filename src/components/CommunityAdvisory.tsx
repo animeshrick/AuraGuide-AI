@@ -4,12 +4,7 @@ import React, { useEffect, useId, useRef, useState } from "react";
 import { Megaphone, Copy, Check, Share2 } from "lucide-react";
 import { AdvisoryAudience } from "@/domain/advisory";
 import { Dictionary, formatMessage, SupportedLanguage } from "@/i18n";
-import {
-  AdvisoryResult,
-  ApiClientError,
-  ClientErrorCode,
-  requestAdvisory,
-} from "@/lib/api-client";
+import { AdvisoryResult, ApiClientError, ClientErrorCode, requestAdvisory } from "@/lib/api-client";
 import { StatusBanner } from "./StatusBanner";
 import { CARD, MUTED, SECTION_HEADING } from "./styles";
 
@@ -72,7 +67,9 @@ export const CommunityAdvisory: React.FC<CommunityAdvisoryProps> = ({ city, lang
       </div>
 
       <fieldset>
-        <legend className="text-xs font-medium text-slate-800 mb-2">{dict.advisory.audience}</legend>
+        <legend className="text-xs font-medium text-slate-800 mb-2">
+          {dict.advisory.audience}
+        </legend>
         <div className="flex flex-wrap gap-2">
           {AUDIENCES.map((a) => (
             <label

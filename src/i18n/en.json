@@ -43,6 +43,8 @@
     "memberName": "Name",
     "age": "Age",
     "commuteMode": "How they travel",
+    "modeGroupHome": "Stays at home",
+    "modeGroupTravel": "Travels to work or school",
     "commuteDist": "Distance one way (km)",
     "commuteTime": "Time one way (minutes)",
     "sensitivities": "Health sensitivities",
@@ -55,6 +57,8 @@
       "elderly": "Elderly (60+)",
       "outdoor_worker": "Works outdoors"
     },
+    "smokes": "Smokes or vapes (optional)",
+    "smokesHint": "Cigarettes, bidis, hookah or vapes. Leave it blank if you prefer. It is only used to fit the advice.",
     "outdoorActivity": "Outdoor routine",
     "outdoorHint": "Walks, play, exercise or work outside.",
     "addActivity": "Add activity",
@@ -81,7 +85,8 @@
     "car_ev": "Electric car",
     "bicycle": "Bicycle",
     "walk": "Walking",
-    "work_from_home": "Stays home or works from home"
+    "work_from_home": "Stays home (works from home, child or retired)",
+    "homemaker": "Homemaker (mom or housewife, runs the household)"
   },
   "categories": {
     "Good": "Good",
@@ -105,7 +110,7 @@
     "normalDay": "Normal day",
     "optimizedDay": "Optimized day",
     "indoorAir": "Indoor air",
-    "whatIfTitle": "What if I change something?",
+    "whatIfTitle": "What if I travel a different way?",
     "communityAdvisory": "Neighbourhood advisory"
   },
   "results": {
@@ -180,32 +185,170 @@
     "dismiss": "Dismiss"
   },
   "whatIf": {
-    "intro": "Ask how one change would affect emissions and exposure. The app recalculates first, then the AI explains the new numbers.",
+    "intro": "See if travelling a different way would be better for your health and for the air. Choose a person, then tap one way to travel.",
     "who": "Who is this about?",
-    "question": "Your question",
-    "placeholder": "e.g. What if I cycle to work instead?",
-    "examplesLabel": "Try an example",
-    "example1": "What if I take the metro instead?",
-    "example2": "What if I cycle instead?",
-    "example3": "What if I work from home?",
+    "question": "Or ask in your own words",
+    "placeholder": "For example: What if I cycle to work instead?",
     "ask": "Ask",
     "asking": "Working it out...",
-    "result": "Result for {name}",
-    "change": "{from} to {to}",
-    "emissionsLine": "Household travel emissions: {before} kg to {after} kg CO₂e a day.",
-    "savedLine": "Saves {kg} kg CO₂e a day.",
-    "extraLine": "Adds {kg} kg CO₂e a day.",
-    "exposureLower": "Exposure to PM2.5 falls by {pct}%.",
-    "exposureHigher": "Exposure to PM2.5 rises by {pct}%.",
-    "exposureSame": "Exposure to PM2.5 stays about the same.",
     "unmatched": {
-      "no_mode": "Name a way of travelling, for example metro, bus, cycling or walking.",
-      "same_mode": "{name} already travels this way. Try a different mode.",
-      "no_commute": "{name} does not travel for work, so there is nothing to change."
+      "no_mode": "Tap one of the ways to travel above, or name one in your question, for example metro, bus, cycling or walking.",
+      "same_mode": "{name} already travels this way. Try a different one.",
+      "no_commute": "{name} does not travel for work or school, so there is nothing to change here. Choose someone else."
     },
     "viaGemini": "Explained by Gemini",
     "viaRules": "Explained by built-in rules",
-    "numbersNote": "The numbers above come from the app's own calculation."
+    "numbersNote": "The numbers above come from the app's own calculation.",
+    "pickMode": "How would they travel instead?",
+    "options": {
+      "metro": "Metro or train",
+      "bus": "Bus",
+      "bicycle": "Bicycle",
+      "walk": "Walking",
+      "car_ev": "Electric car",
+      "work_from_home": "Stay at home"
+    },
+    "optionQuestion": "What if {name} changed to: {mode}?",
+    "verdict": {
+      "better": "A good change for {name}",
+      "mixed": "A mixed result for {name}",
+      "same": "Almost no difference for {name}",
+      "worse": "Not a good change for {name}"
+    },
+    "changeLine": "Changing from {from} to {to}",
+    "modeShort": {
+      "walk": "walking",
+      "bicycle": "a bicycle",
+      "two_wheeler": "a two-wheeler",
+      "auto_rickshaw": "an auto-rickshaw",
+      "bus": "a bus",
+      "metro": "the metro or train",
+      "car_ice": "a petrol or diesel car",
+      "car_ev": "an electric car",
+      "work_from_home": "staying at home",
+      "homemaker": "running the home"
+    },
+    "breathTitle": "The air {name} breathes in",
+    "breathBetter": "{pct}% cleaner",
+    "breathWorse": "{pct}% more polluted",
+    "breathSame": "About the same",
+    "breathNote": "Over a whole day, compared with now.",
+    "fumesTitle": "Fumes from travel",
+    "fumesNote": "Whole household, each day. This is CO₂, the gas that warms the planet.",
+    "fumesBetter": "{kg} kg less",
+    "fumesWorse": "{kg} kg more",
+    "fumesSame": "No change",
+    "barNow": "Now",
+    "barAfter": "After the change",
+    "simpleWords": "In simple words"
+  },
+  "plants": {
+    "title": "Plants for your home",
+    "intro": "A few easy plants that suit this household. They make a home feel fresher and calmer.",
+    "honestTitle": "What plants can and cannot do",
+    "honest": "Plants do not clean smog or PM2.5 out of a room, and a few pots will not clear the air. Closed windows in smoggy hours, an air purifier and no smoke indoors do the real work. Wipe the leaves once a week so dust does not settle on them.",
+    "light": {
+      "low": "Low light is fine",
+      "bright": "Bright room, no direct sun",
+      "sun": "Needs a few hours of sun"
+    },
+    "safeYes": "Not harmful if a child or pet chews a leaf",
+    "safeNo": "Harmful if chewed. Keep out of reach of children and pets.",
+    "notes": {
+      "child_safe": "A young child lives here, so only plants that are safe if chewed are shown.",
+      "asthma_mould": "Someone has asthma, so plants that need constantly damp soil are left out, because damp soil can grow mould."
+    },
+    "plants": {
+      "snake_plant": {
+        "name": "Snake plant",
+        "tip": "Very hard to kill. Water it only every two weeks."
+      },
+      "money_plant": {
+        "name": "Money plant (pothos)",
+        "tip": "Grows in a bottle of water or in soil. Keep it out of strong sun."
+      },
+      "spider_plant": {
+        "name": "Spider plant",
+        "tip": "Grows fast and forgives missed watering. Hang it or keep it on a shelf."
+      },
+      "areca_palm": {
+        "name": "Areca palm",
+        "tip": "Tall and leafy. Water it when the top of the soil is dry."
+      },
+      "tulsi": {
+        "name": "Tulsi",
+        "tip": "Keep it where it gets morning sun, such as a balcony or a window."
+      },
+      "rubber_plant": {
+        "name": "Rubber plant",
+        "tip": "Big shiny leaves. Wipe them with a damp cloth."
+      },
+      "aloe_vera": {
+        "name": "Aloe vera",
+        "tip": "Likes a sunny window. Water it only when the soil is fully dry."
+      },
+      "peace_lily": {
+        "name": "Peace lily",
+        "tip": "Droops when thirsty, then stands up again after watering."
+      },
+      "boston_fern": {
+        "name": "Boston fern",
+        "tip": "Likes a damp spot, such as a bathroom with a window."
+      }
+    }
+  },
+  "outing": {
+    "title": "Have to go out at a set time?",
+    "intro": "Tell us who is going out, when and how. We will say how the air will be at that hour and what to do.",
+    "who": "Who is going out?",
+    "when": "At what time?",
+    "duration": "For how long?",
+    "durations": {
+      "short": "Up to 30 minutes",
+      "medium": "About 1 hour",
+      "long": "2 hours or more"
+    },
+    "how": "How will they go?",
+    "modes": {
+      "on_foot": "On foot or by bicycle",
+      "open_vehicle": "Two-wheeler or auto-rickshaw",
+      "closed_vehicle": "Car, bus or metro"
+    },
+    "airAt": "Air at {time}",
+    "levels": {
+      "fine": "Fine to go out",
+      "careful": "Go out with care",
+      "avoid": "Best to wait if you can"
+    },
+    "verdict": {
+      "fine": "It is fine for {name} to go out at {time}",
+      "careful": "{name} can go out at {time}, with care",
+      "avoid": "It is better for {name} to wait if possible"
+    },
+    "stricter": "The advice for {name} is one step more careful than for a healthy adult, because of age or health.",
+    "cleanerTitle": "A cleaner time nearby",
+    "cleanerLine": "At {time} the air is better.",
+    "noCleaner": "There is no clearly cleaner time within a few hours, so follow the steps below.",
+    "stepsTitle": "What to do",
+    "nothingSpecial": "The air is fine, so no special steps are needed.",
+    "noData": "There is no hourly air data to check this time.",
+    "steps": {
+      "postpone": "If the trip can wait, put it off to a cleaner hour.",
+      "n95": "Wear a well-fitted N95 or FFP2 mask. A cloth or surgical mask does not stop fine dust.",
+      "mask_optional": "A mask is optional. An N95 helps if the air bothers you.",
+      "infant_indoors": "Do not put a mask on a baby. Keep the time outside as short as you can, or keep the baby indoors.",
+      "inhaler": "Carry the inhaler or reliever medicine where you can reach it.",
+      "heart_slow": "Walk slowly and stop to rest. Do not hurry or climb stairs fast.",
+      "elderly_company": "Go with someone, and keep a phone and any medicines with you.",
+      "pregnant_short": "Keep the time outside as short as possible, and rest indoors when you return.",
+      "walk_slow": "Walk slowly and breathe through the nose. Use lanes away from heavy traffic.",
+      "helmet_mask": "On an open vehicle you breathe the road air. If you wear a mask, put it on under the helmet or scarf.",
+      "recirculate": "Keep the windows shut and set the AC to recirculate.",
+      "quiet_road": "This is rush hour. Take a quieter road if there is one.",
+      "break_indoors": "On a long trip, take a break indoors in between.",
+      "after_wash": "When you return, wash your face and hands, and change clothes if you can.",
+      "symptoms": "If you cough, wheeze, feel dizzy or have chest pain, stop, go indoors and rest. See a doctor if it does not settle. For chest pain or trouble breathing, get help straight away."
+    }
   },
   "advisory": {
     "intro": "Write a short notice you can post in a residents' group or send to a school.",

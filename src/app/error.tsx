@@ -2,7 +2,12 @@
 
 import React from "react";
 
-export default function ErrorPage({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function ErrorPage({
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
   return (
     <main className="flex-1 flex items-center justify-center px-4 py-16">
       <div className="max-w-md text-center space-y-4">

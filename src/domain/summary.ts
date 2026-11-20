@@ -4,18 +4,13 @@ import { DailyPlanResponse, PlanSummary } from "./types";
 export function summarizePlan(
   plan: Pick<DailyPlanResponse, "memberImpacts" | "emissionImpact">
 ): PlanSummary {
-  const baselineDoseTotal = plan.memberImpacts.reduce(
-    (sum, m) => sum + m.baselineExposureDose,
-    0
-  );
+  const baselineDoseTotal = plan.memberImpacts.reduce((sum, m) => sum + m.baselineExposureDose, 0);
   const optimizedDoseTotal = plan.memberImpacts.reduce(
     (sum, m) => sum + m.optimizedExposureDose,
     0
   );
   const avoided =
-    baselineDoseTotal > 0
-      ? Math.round((1 - optimizedDoseTotal / baselineDoseTotal) * 100)
-      : 0;
+    baselineDoseTotal > 0 ? Math.round((1 - optimizedDoseTotal / baselineDoseTotal) * 100) : 0;
 
   let highestRiskMember: PlanSummary["highestRiskMember"] = null;
   for (const m of plan.memberImpacts) {

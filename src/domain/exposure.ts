@@ -7,10 +7,12 @@ import {
   INFILTRATION_FACTORS,
   INHALATION_RATES_M3_PER_HOUR,
   N95_PENETRATION,
+  SMOKER_MULTIPLIER,
   isSleepHour,
 } from "./factors";
 import { indexByHour, meanOf } from "./hourly";
 import { COMMUTE_MODE_LABELS, formatHour } from "./labels";
+import { staysAtHome } from "./modes";
 import {
   CommuteMode,
   HourlyAirQuality,
@@ -54,7 +56,7 @@ export function computeIndoorPm25(
 export function getSensitivityMultiplier(member: HouseholdMember): number {
   return member.sensitivities.reduce(
     (max, s) => Math.max(max, HEALTH_SENSITIVITY_MULTIPLIERS[s] ?? 1),
-    1
+    member.smokes ? SMOKER_MULTIPLIER : 1
   );
 }
 
@@ -100,25 +102,20 @@ export function calculateMemberExposure(
   const meanPm25 = meanOf(hourlyData.map((h) => h.pm25));
   const pmAt = (hour: number) => byHour.get(hour)?.pm25 ?? meanPm25;
 
-  const commutes = member.commuteMode !== "work_from_home";
+  const commutes = !staysAtHome(member.commuteMode);
   const travelMode: CommuteMode = isOptimized
     ? recommendModeSwap(member.commuteMode)
     : member.commuteMode;
   const purifierRuns = isOptimized || profile.hasAirPurifier;
   const burnsIncense = !isOptimized && profile.usesIncenseOrCoils;
   const legFraction = commutes
-    ? Math.min(
-        Math.max(member.commuteTimeMinutes, 0) / 60,
-        DAY_MODEL.maxCommuteHoursPerLeg
-      )
+    ? Math.min(Math.max(member.commuteTimeMinutes, 0) / 60, DAY_MODEL.maxCommuteHoursPerLeg)
     : 0;
   const commuteHours: number[] = [DAY_MODEL.morningCommuteHour, DAY_MODEL.eveningCommuteHour];
   const away = DAY_MODEL.awayFromHome;
 
   const activityMinutes = activityMinutesByHour(member.outdoorActivities, (activity) =>
-    isOptimized
-      ? shiftActivityHour(hourlyData, activity.preferredHour)
-      : activity.preferredHour
+    isOptimized ? shiftActivityHour(hourlyData, activity.preferredHour) : activity.preferredHour
   );
 
   let totalDose = 0;
@@ -136,10 +133,7 @@ export function calculateMemberExposure(
     );
 
     const commuteFraction = commuteHours.includes(hour) ? legFraction : 0;
-    const activityFraction = Math.min(
-      (activityMinutes.get(hour) ?? 0) / 60,
-      1 - commuteFraction
-    );
+    const activityFraction = Math.min((activityMinutes.get(hour) ?? 0) / 60, 1 - commuteFraction);
     const indoorFraction = 1 - commuteFraction - activityFraction;
 
     const indoorRate = isSleepHour(hour)
@@ -173,7 +167,12 @@ function describeChanges(
       "Run a HEPA air purifier in the room where you spend most time, or keep one room sealed."
     );
   }
-  if (member.commuteMode !== "work_from_home") {
+  if (member.smokes) {
+    changes.push(
+      "Skip smoking or vaping indoors, and cut down on smog days if you can. It adds fine particles on top of the smog, for you and for everyone at home."
+    );
+  }
+  if (!staysAtHome(member.commuteMode)) {
     const target = recommendModeSwap(member.commuteMode);
     changes.push(
       target !== member.commuteMode
@@ -203,8 +202,7 @@ export function calculateHouseholdExposureImpacts(
   return profile.members.map((member) => {
     const baseline = calculateMemberExposure(member, profile, hourlyData, false);
     const optimized = calculateMemberExposure(member, profile, hourlyData, true);
-    const avoidedPercent =
-      baseline > 0 ? Math.round(((baseline - optimized) / baseline) * 100) : 0;
+    const avoidedPercent = baseline > 0 ? Math.round(((baseline - optimized) / baseline) * 100) : 0;
 
     return {
       memberId: member.id,

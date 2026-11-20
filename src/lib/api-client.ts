@@ -11,11 +11,7 @@ import type { SupportedLanguage } from "@/i18n";
 
 /** Error codes the API can return, plus one for a failed connection. */
 export type ClientErrorCode =
-  | "rate_limited"
-  | "invalid_request"
-  | "city_not_found"
-  | "internal_error"
-  | "network";
+  "rate_limited" | "invalid_request" | "city_not_found" | "internal_error" | "network";
 
 export class ApiClientError extends Error {
   constructor(
@@ -62,7 +58,10 @@ async function postJson<T>(url: string, body: unknown, signal?: AbortSignal): Pr
       data && typeof data === "object" && "code" in data && typeof data.code === "string"
         ? data.code
         : "";
-    throw new ApiClientError(KNOWN_CODES[code] ?? "internal_error", `Request failed (${response.status}).`);
+    throw new ApiClientError(
+      KNOWN_CODES[code] ?? "internal_error",
+      `Request failed (${response.status}).`
+    );
   }
   if (data === null || typeof data !== "object") {
     throw new ApiClientError("internal_error", "The server sent an unreadable answer.");
@@ -95,6 +94,7 @@ export function requestWhatIf(
     profile: HouseholdProfile;
     question: string;
     memberId?: string;
+    toMode?: CommuteMode;
     language: SupportedLanguage;
   },
   signal?: AbortSignal

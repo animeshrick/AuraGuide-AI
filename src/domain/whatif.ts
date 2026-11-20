@@ -1,6 +1,7 @@
 import { dailyCommuteEmissionsKg, roundKg } from "./emissions";
 import { calculateMemberExposure } from "./exposure";
 import { COMMUTE_MODE_LABELS } from "./labels";
+import { staysAtHome } from "./modes";
 import {
   CommuteMode,
   HourlyAirQuality,
@@ -17,9 +18,17 @@ import {
  */
 const MODE_KEYWORDS: Record<CommuteMode, { ascii: string[]; native: string[] }> = {
   work_from_home: {
-    ascii: ["wfh", "work(?:ing)?[ -]from[ -]home", "work remotely", "remote work", "stay(?:ing)? (?:at )?home"],
+    ascii: [
+      "wfh",
+      "work(?:ing)?[ -]from[ -]home",
+      "work remotely",
+      "remote work",
+      "stay(?:ing)? (?:at )?home",
+    ],
     native: ["घर से काम", "वर्क फ्रॉम होम", "বাড়ি থেকে কাজ", "ওয়ার্ক ফ্রম হোম"],
   },
+  // Nobody asks "what if I became a homemaker" as a commute change, so this has no words.
+  homemaker: { ascii: [], native: [] },
   bicycle: {
     ascii: ["bicycle", "bicycling", "cycle", "cycles", "cycled", "cycling", "pedal(?:ling)?"],
     native: ["साइकिल", "সাইকেল"],
@@ -54,15 +63,18 @@ const MODE_KEYWORDS: Record<CommuteMode, { ascii: string[]; native: string[] }> 
 const NOT_AFTER = "(?<![\\p{L}\\p{M}\\p{N}_-])";
 const NOT_BEFORE = "(?![\\p{L}\\p{M}\\p{N}_])";
 
+/** A mode with no words is skipped: an empty alternation would match every question. */
 const MODE_PATTERNS: { mode: CommuteMode; pattern: RegExp }[] = (
   Object.entries(MODE_KEYWORDS) as [CommuteMode, { ascii: string[]; native: string[] }][]
-).map(([mode, words]) => ({
-  mode,
-  pattern: new RegExp(
-    `${NOT_AFTER}(?:${words.ascii.join("|")})${NOT_BEFORE}|(?<![\\p{L}\\p{M}])(?:${words.native.join("|")})`,
-    "iu"
-  ),
-}));
+)
+  .filter(([, words]) => words.ascii.length > 0 || words.native.length > 0)
+  .map(([mode, words]) => ({
+    mode,
+    pattern: new RegExp(
+      `${NOT_AFTER}(?:${words.ascii.join("|")})${NOT_BEFORE}|(?<![\\p{L}\\p{M}])(?:${words.native.join("|")})`,
+      "iu"
+    ),
+  }));
 
 /**
  * Words meaning "instead of". In English the new mode comes before the marker
@@ -143,9 +155,8 @@ export function pickMember(
   if (named) return named;
 
   return (
-    profile.members.find(
-      (m) => m.commuteMode !== "work_from_home" && m.commuteDistanceKm > 0
-    ) ?? profile.members[0]
+    profile.members.find((m) => !staysAtHome(m.commuteMode) && m.commuteDistanceKm > 0) ??
+    profile.members[0]
   );
 }
 
@@ -157,7 +168,8 @@ export function runWhatIf(
   profile: HouseholdProfile,
   hourly: HourlyAirQuality[],
   question: string,
-  memberId?: string
+  memberId?: string,
+  chosenMode?: CommuteMode
 ): WhatIfOutcome {
   const member = pickMember(profile, question, memberId);
   const base = {
@@ -166,7 +178,8 @@ export function runWhatIf(
     fromMode: member.commuteMode,
   };
 
-  const toMode = detectModeFromQuestion(question, member.commuteMode);
+  // A mode picked with a button is used as it is. Typed questions are read for a mode.
+  const toMode = chosenMode ?? detectModeFromQuestion(question, member.commuteMode);
   if (!toMode) return { matched: false, reason: "no_mode", ...base };
   if (toMode === member.commuteMode) return { matched: false, reason: "same_mode", ...base };
   if (!(member.commuteDistanceKm > 0)) return { matched: false, reason: "no_commute", ...base };
@@ -187,9 +200,7 @@ export function runWhatIf(
     false
   );
   const changePct =
-    baselineDose > 0
-      ? Math.round(((recalculatedDose - baselineDose) / baselineDose) * 100)
-      : 0;
+    baselineDose > 0 ? Math.round(((recalculatedDose - baselineDose) / baselineDose) * 100) : 0;
 
   return {
     matched: true,
@@ -209,30 +220,32 @@ export function explainWhatIfWithRules(
   outcome: Extract<WhatIfOutcome, { matched: true }>,
   aqi: number
 ): string {
+  const name = outcome.memberName;
   const from = COMMUTE_MODE_LABELS[outcome.fromMode];
   const to = COMMUTE_MODE_LABELS[outcome.toMode];
+  const pct = Math.round(outcome.exposureChangePercentage);
 
-  const emissions =
+  const air =
+    pct < 0
+      ? `the air ${name} breathes in over the day would be about ${Math.abs(pct)}% cleaner`
+      : pct > 0
+        ? `the air ${name} breathes in over the day would be about ${pct}% more polluted`
+        : `the air ${name} breathes in over the day would stay about the same`;
+
+  const fumes =
     outcome.savedEmissionsKg > 0
-      ? `cuts the household's daily commute emissions from ${outcome.householdBaselineEmissionsKg} to ${outcome.householdRecalculatedEmissionsKg} kg CO2e`
+      ? `Fumes from travel for the whole household would fall from ${outcome.householdBaselineEmissionsKg} kg to ${outcome.householdRecalculatedEmissionsKg} kg of CO2 a day`
       : outcome.savedEmissionsKg < 0
-        ? `raises the household's daily commute emissions from ${outcome.householdBaselineEmissionsKg} to ${outcome.householdRecalculatedEmissionsKg} kg CO2e`
-        : "does not change the household's commute emissions";
-
-  const exposure =
-    outcome.exposureChangePercentage > 0
-      ? `${outcome.memberName}'s estimated PM2.5 intake over the day would be about ${outcome.exposureChangePercentage}% higher`
-      : outcome.exposureChangePercentage < 0
-        ? `${outcome.memberName}'s estimated PM2.5 intake over the day would be about ${Math.abs(outcome.exposureChangePercentage)}% lower`
-        : `${outcome.memberName}'s estimated PM2.5 intake would not change`;
+        ? `Fumes from travel for the whole household would rise from ${outcome.householdBaselineEmissionsKg} kg to ${outcome.householdRecalculatedEmissionsKg} kg of CO2 a day`
+        : "Fumes from travel for the whole household would not change";
 
   const active = outcome.toMode === "walk" || outcome.toMode === "bicycle";
   const advice =
     active && aqi > 200
-      ? `At AQI ${aqi}, breathing harder outdoors raises the dose even though the trip makes no emissions. On days like this, choose the metro or wear a fitted N95, and travel in the cleanest hour.`
-      : outcome.exposureChangePercentage > 0
-        ? "Pair this change with a fitted N95 mask and travel in the cleanest hour to keep the exposure down."
+      ? `The air is very bad today (AQI ${aqi}). Walking or cycling makes you breathe harder, so you take in more dirty air even though the trip makes no fumes. On days like this, choose the metro or wear a fitted N95 mask, and travel at the cleanest hour.`
+      : pct > 0
+        ? "Wear a fitted N95 mask and travel at the cleanest hour to keep the dirty air down."
         : "This looks like a good change on a smog day. Keep a fitted N95 mask for the walk to the stop.";
 
-  return `Switching ${outcome.memberName} from ${from} to ${to} ${emissions}. ${exposure}.\n\nRecommendation: ${advice}`;
+  return `If ${name} changed from ${from} to ${to}, ${air}. ${fumes}.\n\nWhat to do: ${advice}`;
 }

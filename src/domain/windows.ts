@@ -94,10 +94,7 @@ function bandFor(aqi: number): Band {
   return "severe";
 }
 
-const RECOMMENDATIONS: Record<
-  SafeWindow["activity"],
-  (range: string) => Record<Band, string>
-> = {
+const RECOMMENDATIONS: Record<SafeWindow["activity"], (range: string) => Record<Band, string>> = {
   school_run: (range) => ({
     clean: `Air is fine for the school run. ${range} is the cleanest slot to leave.`,
     elevated: `Leave in the ${range} slot, the cleanest of the morning. Keep waiting time outdoors short.`,
