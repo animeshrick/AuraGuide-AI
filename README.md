@@ -5,8 +5,8 @@ A GenAI assistant that helps families and communities get through severe winter 
 Built for PromptWars Virtual, Challenge 6: Urban Air Quality Assistant (Hack2skill and Google for Developers).
 
 - Live app: https://auraguide-ai.challenge6.workers.dev/
-- Demo video: `<ADD VIDEO URL>`
-- Build post: `<ADD LINKEDIN POST URL>`
+- Demo video: https://www.loom.com/share/f186e4353f2c4f0097723f7946a573ec
+- Build post: https://www.linkedin.com/feed/update/urn:li:activity:7529590080232042496/
 
 ## The problem
 
