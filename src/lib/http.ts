@@ -9,6 +9,7 @@ export type ApiErrorCode =
   | "payload_too_large"
   | "invalid_request"
   | "city_not_found"
+  | "ai_unavailable"
   | "internal_error";
 
 export function apiJson(body: unknown, init: ResponseInit = {}): NextResponse {

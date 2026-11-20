@@ -4,7 +4,9 @@ import { generateFallbackPlan } from "@/domain/rules-fallback";
 import { runWhatIf } from "@/domain/whatif";
 import { DailyPlanResponseSchema } from "@/ai/schemas";
 import {
+  classifyGeminiError,
   finalizeGeminiPlan,
+  GeminiUnavailableError,
   generateCommunityAdvisoryWithGemini,
   generateOptimizedPlanWithGemini,
   generateWhatIfAnswerWithGemini,
@@ -90,28 +92,38 @@ afterEach(() => {
 });
 
 describe("generateOptimizedPlanWithGemini", () => {
-  it("returns null without an API key and never calls the service", async () => {
+  it("refuses to write a plan without an API key and never calls the service", async () => {
     vi.stubEnv("GEMINI_API_KEY", "");
-    expect(await generateOptimizedPlanWithGemini(profile, airQuality, facts)).toBeNull();
+    await expect(generateOptimizedPlanWithGemini(profile, airQuality, facts)).rejects.toMatchObject(
+      { reason: "missing_key" }
+    );
     expect(generateContent).not.toHaveBeenCalled();
   });
 
   it("treats the placeholder key from .env.example as no key", async () => {
     vi.stubEnv("GEMINI_API_KEY", "your_gemini_api_key_here");
-    expect(await generateOptimizedPlanWithGemini(profile, airQuality, facts)).toBeNull();
+    await expect(generateOptimizedPlanWithGemini(profile, airQuality, facts)).rejects.toMatchObject(
+      { reason: "missing_key" }
+    );
+  });
+
+  it("ignores spaces and a Windows line ending around the key", async () => {
+    vi.stubEnv("GEMINI_API_KEY", " test-key\r ");
+    reply(validOutput);
+    await generateOptimizedPlanWithGemini(profile, airQuality, facts);
+    expect(generateContent).toHaveBeenCalledTimes(1);
   });
 
   it("returns a plan in the exact shape the browser expects", async () => {
     reply(validOutput);
     const plan = await generateOptimizedPlanWithGemini(profile, airQuality, facts);
-    expect(plan).not.toBeNull();
-    expect(plan!.isFallback).toBe(false);
+    expect(plan.isFallback).toBe(false);
     expect(DailyPlanResponseSchema.safeParse(plan).success).toBe(true);
   });
 
   it("takes every number from the engine, not from the model", async () => {
     reply(validOutput);
-    const plan = (await generateOptimizedPlanWithGemini(profile, airQuality, facts))!;
+    const plan = await generateOptimizedPlanWithGemini(profile, airQuality, facts);
 
     const at7 = airQuality.hourly.find((h) => h.hour === 7)!;
     const seven = plan.schedule.find((s) => s.hour === 7)!;
@@ -128,7 +140,7 @@ describe("generateOptimizedPlanWithGemini", () => {
 
   it("uses the model's words for tips and member changes", async () => {
     reply(validOutput);
-    const plan = (await generateOptimizedPlanWithGemini(profile, airQuality, facts))!;
+    const plan = await generateOptimizedPlanWithGemini(profile, airQuality, facts);
     expect(plan.summary).toBe(validOutput.summary);
     expect(plan.safeWindows.find((w) => w.activity === "exercise")?.recommendation).toBe(
       "Walk in the early afternoon."
@@ -138,7 +150,7 @@ describe("generateOptimizedPlanWithGemini", () => {
 
   it("sorts the schedule by hour", async () => {
     reply({ ...validOutput, schedule: [...validOutput.schedule].reverse() });
-    const plan = (await generateOptimizedPlanWithGemini(profile, airQuality, facts))!;
+    const plan = await generateOptimizedPlanWithGemini(profile, airQuality, facts);
     const hours = plan.schedule.map((s) => s.hour);
     expect(hours).toEqual([...hours].sort((a, b) => a - b));
   });
@@ -169,17 +181,21 @@ describe("generateOptimizedPlanWithGemini", () => {
       },
     ],
     ["an empty reply", ""],
-  ])("returns null for %s", async (_label, value) => {
+  ])("refuses %s rather than inventing a plan", async (_label, value) => {
     reply(value);
-    expect(await generateOptimizedPlanWithGemini(profile, airQuality, facts)).toBeNull();
+    await expect(generateOptimizedPlanWithGemini(profile, airQuality, facts)).rejects.toMatchObject(
+      { reason: "bad_output" }
+    );
   });
 
-  it("returns null when the service throws, and logs no household details", async () => {
-    generateContent.mockRejectedValue(new Error("503 unavailable"));
-    expect(await generateOptimizedPlanWithGemini(profile, airQuality, facts)).toBeNull();
+  it("names the reason when the service throws, and logs no household details", async () => {
+    generateContent.mockRejectedValue(Object.assign(new Error("server error"), { status: 503 }));
+    await expect(generateOptimizedPlanWithGemini(profile, airQuality, facts)).rejects.toMatchObject(
+      { reason: "service_error" }
+    );
 
     const logged = JSON.stringify(vi.mocked(console.error).mock.calls);
-    expect(logged).toContain("503");
+    expect(logged).toContain("service_error");
     expect(logged).not.toContain("Sunita");
     expect(logged).not.toContain("test-key");
   });
@@ -196,12 +212,12 @@ describe("generateOptimizedPlanWithGemini", () => {
     const other = makeProfile({
       members: [makeMember({ id: "z1", name: "Someone Else", commuteMode: "bus" })],
     });
-    const first = (await generateOptimizedPlanWithGemini(profile, airQuality, facts))!;
-    const second = (await generateOptimizedPlanWithGemini(
+    const first = await generateOptimizedPlanWithGemini(profile, airQuality, facts);
+    const second = await generateOptimizedPlanWithGemini(
       other,
       airQuality,
       computeEngineFacts(other, airQuality)
-    ))!;
+    );
 
     expect(generateContent).toHaveBeenCalledTimes(2);
     expect(first.memberImpacts.map((m) => m.memberName)).toContain("Sunita");
@@ -260,14 +276,16 @@ describe("text answers", () => {
     expect(text!.length).toBeLessThanOrEqual(2500);
   });
 
-  it("returns null for empty answers and for failures", async () => {
+  it("refuses empty answers and reports failures, with no built-in wording", async () => {
     generateContent.mockResolvedValueOnce({ text: "   " });
-    expect(await generateWhatIfAnswerWithGemini(whatIfArgs)).toBeNull();
+    await expect(generateWhatIfAnswerWithGemini(whatIfArgs)).rejects.toBeInstanceOf(
+      GeminiUnavailableError
+    );
 
-    generateContent.mockRejectedValueOnce(new Error("boom"));
-    expect(
-      await generateWhatIfAnswerWithGemini({ ...whatIfArgs, question: "Another one?" })
-    ).toBeNull();
+    generateContent.mockRejectedValueOnce(Object.assign(new Error("denied"), { status: 403 }));
+    await expect(
+      generateWhatIfAnswerWithGemini({ ...whatIfArgs, question: "Another one?" })
+    ).rejects.toMatchObject({ reason: "invalid_key" });
   });
 
   it("writes an advisory and keeps audiences apart in the cache", async () => {
@@ -283,9 +301,11 @@ describe("text answers", () => {
     ).toBe("Society notice.");
   });
 
-  it("returns null without a key", async () => {
+  it("refuses without a key", async () => {
     vi.stubEnv("GEMINI_API_KEY", "");
-    expect(await generateWhatIfAnswerWithGemini(whatIfArgs)).toBeNull();
+    await expect(generateWhatIfAnswerWithGemini(whatIfArgs)).rejects.toMatchObject({
+      reason: "missing_key",
+    });
   });
 });
 
@@ -297,5 +317,33 @@ describe("fallback and AI plans agree on shape", () => {
     expect(DailyPlanResponseSchema.safeParse(ai).success).toBe(true);
     expect(DailyPlanResponseSchema.safeParse(rules).success).toBe(true);
     expect(Object.keys(ai!).sort()).toEqual(Object.keys(rules).sort());
+  });
+});
+
+describe("classifyGeminiError", () => {
+  const withStatus = (status: number, message = "x") =>
+    Object.assign(new Error(message), { status });
+
+  it.each([
+    [withStatus(401), "invalid_key"],
+    [withStatus(403), "invalid_key"],
+    [new Error("API key not valid. Please pass a valid API key."), "invalid_key"],
+    [withStatus(429), "quota"],
+    [new Error("RESOURCE_EXHAUSTED: quota exceeded"), "quota"],
+    [withStatus(404), "model_not_found"],
+    [withStatus(500), "service_error"],
+    [withStatus(503), "service_error"],
+    [new DOMException("The operation timed out.", "TimeoutError"), "timeout"],
+    [Object.assign(new Error("aborted"), { name: "AbortError" }), "timeout"],
+    [new TypeError("fetch failed"), "network"],
+    [new SyntaxError("Unexpected token"), "bad_output"],
+    [new Error("something else"), "unknown"],
+    ["not an error object", "unknown"],
+  ])("maps %j to one reason", (err, reason) => {
+    expect(classifyGeminiError(err)).toBe(reason);
+  });
+
+  it("keeps the reason of an error that is already classified", () => {
+    expect(classifyGeminiError(new GeminiUnavailableError("quota"))).toBe("quota");
   });
 });

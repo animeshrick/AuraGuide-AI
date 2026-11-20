@@ -11,7 +11,12 @@ import type { SupportedLanguage } from "@/i18n";
 
 /** Error codes the API can return, plus one for a failed connection. */
 export type ClientErrorCode =
-  "rate_limited" | "invalid_request" | "city_not_found" | "internal_error" | "network";
+  | "rate_limited"
+  | "invalid_request"
+  | "city_not_found"
+  | "ai_unavailable"
+  | "internal_error"
+  | "network";
 
 export class ApiClientError extends Error {
   constructor(
@@ -29,6 +34,7 @@ const KNOWN_CODES: Record<string, ClientErrorCode> = {
   invalid_json: "invalid_request",
   payload_too_large: "invalid_request",
   city_not_found: "city_not_found",
+  ai_unavailable: "ai_unavailable",
   internal_error: "internal_error",
 };
 

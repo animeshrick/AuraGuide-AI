@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
-import { generateWhatIfAnswerWithGemini } from "@/ai/gemini";
+import { GeminiUnavailableError, generateWhatIfAnswerWithGemini } from "@/ai/gemini";
 import { WhatIfRequestSchema } from "@/ai/schemas";
-import { explainWhatIfWithRules, runWhatIf } from "@/domain/whatif";
+import { runWhatIf } from "@/domain/whatif";
 import { resolveAirQuality } from "@/lib/air-quality-service";
 import { apiError, apiJson, enforceRateLimit, readJsonBody } from "@/lib/http";
 import { validatePayload } from "@/lib/validation";
@@ -49,10 +49,17 @@ export async function POST(req: NextRequest) {
       ...outcome,
       question,
       currentAQI: airQuality.aqi,
-      explanation: aiText ?? explainWhatIfWithRules(outcome, airQuality.aqi),
-      explanationSource: aiText ? "gemini" : "rules",
+      explanation: aiText,
+      explanationSource: "gemini",
     });
   } catch (err) {
+    if (err instanceof GeminiUnavailableError) {
+      return apiError(
+        "ai_unavailable",
+        "The AI service did not answer, so nothing was written. The server log shows the reason.",
+        503
+      );
+    }
     console.error("POST /api/whatif failed:", err instanceof Error ? err.message : "unknown");
     return apiError("internal_error", "Something went wrong while answering that question.", 500);
   }

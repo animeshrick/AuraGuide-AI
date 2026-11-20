@@ -13,11 +13,14 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/air-quality-service", () => ({ resolveAirQuality: mocks.resolveAirQuality }));
-vi.mock("@/ai/gemini", () => ({
+vi.mock("@/ai/gemini", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/ai/gemini")>()),
   generateOptimizedPlanWithGemini: mocks.generatePlan,
   generateWhatIfAnswerWithGemini: mocks.generateWhatIf,
   generateCommunityAdvisoryWithGemini: mocks.generateAdvisory,
 }));
+
+import { GeminiUnavailableError } from "@/ai/gemini";
 
 import { POST as advisoryPOST } from "@/app/api/advisory/route";
 import { POST as planPOST } from "@/app/api/plan/route";
@@ -38,9 +41,11 @@ beforeEach(() => {
   resetRateLimits();
   vi.stubEnv("RATE_LIMIT_PER_MINUTE", "100");
   mocks.resolveAirQuality.mockReset().mockResolvedValue({ ok: true, airQuality });
-  mocks.generatePlan.mockReset().mockResolvedValue(null);
-  mocks.generateWhatIf.mockReset().mockResolvedValue(null);
-  mocks.generateAdvisory.mockReset().mockResolvedValue(null);
+  mocks.generatePlan
+    .mockReset()
+    .mockResolvedValue({ ...generateFallbackPlan(profile, airQuality), isFallback: false });
+  mocks.generateWhatIf.mockReset().mockResolvedValue("AI explanation.");
+  mocks.generateAdvisory.mockReset().mockResolvedValue("AI advisory.");
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -105,19 +110,20 @@ describe("shared protections", () => {
 });
 
 describe("POST /api/plan", () => {
-  it("returns the rule-based plan when the AI service gives nothing", async () => {
+  it("answers 503 with no plan when Gemini cannot write one, and uses no built-in wording", async () => {
+    mocks.generatePlan.mockRejectedValue(new GeminiUnavailableError("missing_key"));
     const res = await planPOST(post("/api/plan", profile));
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(503);
     const body = await res.json();
-    expect(body.isFallback).toBe(true);
-    expect(DailyPlanResponseSchema.safeParse(body).success).toBe(true);
+    expect(body.code).toBe("ai_unavailable");
+    expect(body.isFallback).toBeUndefined();
+    expect(body.schedule).toBeUndefined();
   });
 
-  it("returns the AI plan when there is one", async () => {
-    const aiPlan = { ...generateFallbackPlan(profile, airQuality), isFallback: false };
-    mocks.generatePlan.mockResolvedValue(aiPlan);
+  it("returns the Gemini plan when there is one", async () => {
     const body = await (await planPOST(post("/api/plan", profile))).json();
     expect(body.isFallback).toBe(false);
+    expect(DailyPlanResponseSchema.safeParse(body).success).toBe(true);
   });
 
   it("gives the AI the engine's numbers, not numbers from the browser", async () => {
@@ -187,14 +193,13 @@ describe("POST /api/whatif", () => {
     expect(res.status).toBe(400);
   });
 
-  it("explains with rules when the AI service is unavailable", async () => {
-    const body = await (
-      await whatifPOST(
-        post("/api/whatif", { profile, question: "What if I take the metro?", memberId: "m1" })
-      )
-    ).json();
-    expect(body.explanationSource).toBe("rules");
-    expect(body.explanation).toContain("Rajesh");
+  it("answers 503 when Gemini is unavailable, instead of explaining with rules", async () => {
+    mocks.generateWhatIf.mockRejectedValue(new GeminiUnavailableError("quota"));
+    const res = await whatifPOST(
+      post("/api/whatif", { profile, question: "What if I take the metro?", memberId: "m1" })
+    );
+    expect(res.status).toBe(503);
+    expect((await res.json()).code).toBe("ai_unavailable");
   });
 
   it("does not call the AI when the question names no way of travelling", async () => {
@@ -225,12 +230,13 @@ describe("POST /api/advisory", () => {
     });
   });
 
-  it("falls back to a rule-based advisory", async () => {
-    const body = await (
-      await advisoryPOST(post("/api/advisory", { city: "Delhi", audience: "housing_society" }))
-    ).json();
-    expect(body.advisorySource).toBe("rules");
-    expect(body.advisoryText).toContain(String(airQuality.aqi));
+  it("answers 503 when Gemini is unavailable, instead of a rule-based advisory", async () => {
+    mocks.generateAdvisory.mockRejectedValue(new GeminiUnavailableError("timeout"));
+    const res = await advisoryPOST(
+      post("/api/advisory", { city: "Delhi", audience: "housing_society" })
+    );
+    expect(res.status).toBe(503);
+    expect((await res.json()).code).toBe("ai_unavailable");
   });
 
   it("says when the data is modelled", async () => {

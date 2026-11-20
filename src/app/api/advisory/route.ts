@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
-import { generateCommunityAdvisoryWithGemini } from "@/ai/gemini";
+import { GeminiUnavailableError, generateCommunityAdvisoryWithGemini } from "@/ai/gemini";
 import { AdvisoryRequestSchema } from "@/ai/schemas";
-import { buildFallbackAdvisory } from "@/domain/advisory";
 import { formatHourRange } from "@/domain/labels";
 import { findSafeWindows } from "@/domain/windows";
 import { resolveAirQuality } from "@/lib/air-quality-service";
@@ -52,18 +51,17 @@ export async function POST(req: NextRequest) {
       category: airQuality.category,
       audience,
       dataSource: airQuality.dataSource,
-      advisoryText:
-        aiText ??
-        buildFallbackAdvisory({
-          city: airQuality.city,
-          aqi: airQuality.aqi,
-          category: airQuality.category,
-          audience,
-          cleanestWindow,
-        }),
-      advisorySource: aiText ? "gemini" : "rules",
+      advisoryText: aiText,
+      advisorySource: "gemini",
     });
   } catch (err) {
+    if (err instanceof GeminiUnavailableError) {
+      return apiError(
+        "ai_unavailable",
+        "The AI service did not answer, so nothing was written. The server log shows the reason.",
+        503
+      );
+    }
     console.error("POST /api/advisory failed:", err instanceof Error ? err.message : "unknown");
     return apiError("internal_error", "Something went wrong while writing the advisory.", 500);
   }

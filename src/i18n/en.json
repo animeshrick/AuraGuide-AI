@@ -182,7 +182,8 @@
     "city_not_found": "We could not find that city. Check the spelling or try a larger city nearby.",
     "internal_error": "Something went wrong on our side. Please try again.",
     "network": "Could not reach the server. Check your connection and try again.",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "ai_unavailable": "The AI service did not answer, so no plan was written. The server log shows the reason."
   },
   "whatIf": {
     "intro": "See if travelling a different way would be better for your health and for the air. Choose a person, then tap one way to travel.",
