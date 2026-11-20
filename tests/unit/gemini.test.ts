@@ -11,6 +11,7 @@ import {
   generateOptimizedPlanWithGemini,
   generateWhatIfAnswerWithGemini,
   planCacheKey,
+  setGeminiRetryDelaysForTests,
 } from "@/ai/gemini";
 import { makeAirQuality, makeHourly, makeMember, makeProfile } from "./helpers/fixtures";
 
@@ -82,6 +83,9 @@ beforeEach(() => {
   aiTextCache.clear();
   vi.stubEnv("GEMINI_API_KEY", "test-key");
   vi.stubEnv("GEMINI_MODEL", "gemini-test");
+  vi.stubEnv("GEMINI_MODEL_2", "model-two");
+  vi.stubEnv("GEMINI_MODEL_3", "model-three");
+  setGeminiRetryDelaysForTests([0, 0]);
   vi.spyOn(console, "error").mockImplementation(() => {});
   vi.spyOn(console, "warn").mockImplementation(() => {});
 });
@@ -345,5 +349,68 @@ describe("classifyGeminiError", () => {
 
   it("keeps the reason of an error that is already classified", () => {
     expect(classifyGeminiError(new GeminiUnavailableError("quota"))).toBe("quota");
+  });
+});
+
+describe("model fallback", () => {
+  const busy = () =>
+    Object.assign(new Error("This model is currently experiencing high demand."), { status: 503 });
+  const modelsCalled = () => generateContent.mock.calls.map((call) => call[0].model);
+
+  it("retries a busy model, then moves to model two and returns its plan", async () => {
+    generateContent
+      .mockRejectedValueOnce(busy())
+      .mockRejectedValueOnce(busy())
+      .mockRejectedValueOnce(busy())
+      .mockResolvedValueOnce({ text: JSON.stringify(validOutput) });
+
+    const plan = await generateOptimizedPlanWithGemini(profile, airQuality, facts);
+
+    expect(plan.isFallback).toBe(false);
+    expect(modelsCalled()).toEqual(["gemini-test", "gemini-test", "gemini-test", "model-two"]);
+  });
+
+  it("moves to model three when model two is also busy", async () => {
+    generateContent
+      .mockRejectedValueOnce(busy())
+      .mockRejectedValueOnce(busy())
+      .mockRejectedValueOnce(busy())
+      .mockRejectedValueOnce(busy())
+      .mockRejectedValueOnce(busy())
+      .mockRejectedValueOnce(busy())
+      .mockResolvedValueOnce({ text: JSON.stringify(validOutput) });
+
+    await generateOptimizedPlanWithGemini(profile, airQuality, facts);
+
+    expect(modelsCalled().at(-1)).toBe("model-three");
+  });
+
+  it("shows the error only after all three models have failed", async () => {
+    generateContent.mockRejectedValue(busy());
+
+    await expect(generateOptimizedPlanWithGemini(profile, airQuality, facts)).rejects.toMatchObject(
+      { reason: "service_error" }
+    );
+    expect(generateContent).toHaveBeenCalledTimes(9);
+    expect(new Set(modelsCalled())).toEqual(new Set(["gemini-test", "model-two", "model-three"]));
+  });
+
+  it("switches to the next model at once when the quota is used up", async () => {
+    generateContent
+      .mockRejectedValueOnce(Object.assign(new Error("quota exceeded"), { status: 429 }))
+      .mockResolvedValueOnce({ text: JSON.stringify(validOutput) });
+
+    await generateOptimizedPlanWithGemini(profile, airQuality, facts);
+
+    expect(modelsCalled()).toEqual(["gemini-test", "model-two"]);
+  });
+
+  it("stops at once on a bad key, because every model would fail", async () => {
+    generateContent.mockRejectedValue(Object.assign(new Error("denied"), { status: 403 }));
+
+    await expect(generateOptimizedPlanWithGemini(profile, airQuality, facts)).rejects.toMatchObject(
+      { reason: "invalid_key" }
+    );
+    expect(generateContent).toHaveBeenCalledTimes(1);
   });
 });

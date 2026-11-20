@@ -79,8 +79,65 @@ function getClient(): GoogleGenAI {
   return new GoogleGenAI({ apiKey });
 }
 
+/** Attempts per model for transient errors (503, "high demand") before moving on to the next model. */
+const TRANSIENT_RETRIES = 2;
+/** Stop starting new attempts after this long, so one request cannot hang for minutes. */
+const TOTAL_BUDGET_MS = 60_000;
+const DEFAULT_MODELS = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-3.5-flash-lite"];
+let retryDelaysMs = [1_000, 2_000];
+
+/** Tests only: replaces the real waits between retries. */
+export function setGeminiRetryDelaysForTests(delays: number[]): void {
+  retryDelaysMs = delays;
+}
+
+/** Model 1, then model 2 and model 3. Set GEMINI_MODEL, GEMINI_MODEL_2 and GEMINI_MODEL_3 to change them. */
+function getModelChain(): string[] {
+  const configured = [
+    process.env.GEMINI_MODEL,
+    process.env.GEMINI_MODEL_2,
+    process.env.GEMINI_MODEL_3,
+  ];
+  const chain = configured.map((value, i) => value?.trim() || DEFAULT_MODELS[i]);
+  return [...new Set(chain)];
+}
+
 function getModelName(): string {
-  return process.env.GEMINI_MODEL?.trim() || "gemini-3.6-flash";
+  return getModelChain()[0];
+}
+
+function isTransient(err: unknown): boolean {
+  if (classifyGeminiError(err) === "service_error") return true;
+  return err instanceof Error && /high demand|UNAVAILABLE|overloaded/i.test(err.message);
+}
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Run one request against model 1. A transient failure is retried on the same model. Any other
+ * failure, or a model that stays busy, moves on to model 2 and then model 3. A bad key or a missing
+ * key stops at once, because every model would fail the same way.
+ */
+async function runWithFallback<T>(label: string, run: (model: string) => Promise<T>): Promise<T> {
+  const started = Date.now();
+  let lastError: unknown = new GeminiUnavailableError("unknown", "no model was tried");
+
+  for (const model of getModelChain()) {
+    for (let attempt = 0; attempt <= TRANSIENT_RETRIES; attempt++) {
+      if (Date.now() - started > TOTAL_BUDGET_MS) throw logFailure(label, lastError);
+      try {
+        return await run(model);
+      } catch (err) {
+        lastError = err;
+        const reason = classifyGeminiError(err);
+        console.error(`[gemini] ${label} model=${model} attempt=${attempt + 1} failed (${reason})`);
+        if (reason === "invalid_key" || reason === "missing_key") throw logFailure(label, err);
+        if (!isTransient(err) || attempt === TRANSIENT_RETRIES) break;
+        await sleep(retryDelaysMs[attempt] ?? 0);
+      }
+    }
+  }
+  throw logFailure(label, lastError);
 }
 
 function hash(value: unknown): string {
@@ -177,9 +234,9 @@ export async function generateOptimizedPlanWithGemini(
   const cached = aiPlanCache.get<DailyPlanResponse>(cacheKey);
   if (cached) return cached;
 
-  try {
+  const plan = await runWithFallback("plan request", async (model) => {
     const response = await client.models.generateContent({
-      model: getModelName(),
+      model,
       contents: buildPlanPrompt(profile, airQuality, facts),
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
@@ -209,12 +266,10 @@ export async function generateOptimizedPlanWithGemini(
       throw new GeminiUnavailableError("bad_output", `fields: ${paths.join(", ")}`);
     }
 
-    const plan = finalizeGeminiPlan(parsed.data, profile, airQuality, facts);
-    aiPlanCache.set(cacheKey, plan, PLAN_CACHE_TTL_MS);
-    return plan;
-  } catch (err) {
-    throw logFailure("plan request", err);
-  }
+    return finalizeGeminiPlan(parsed.data, profile, airQuality, facts);
+  });
+  aiPlanCache.set(cacheKey, plan, PLAN_CACHE_TTL_MS);
+  return plan;
 }
 
 async function generateText(prompt: string, cacheKeyParts: unknown): Promise<string> {
@@ -224,9 +279,9 @@ async function generateText(prompt: string, cacheKeyParts: unknown): Promise<str
   const cached = aiTextCache.get<string>(cacheKey);
   if (cached) return cached;
 
-  try {
+  const clipped = await runWithFallback("text request", async (model) => {
     const response = await client.models.generateContent({
-      model: getModelName(),
+      model,
       contents: prompt,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
@@ -237,12 +292,10 @@ async function generateText(prompt: string, cacheKeyParts: unknown): Promise<str
     const text = response.text?.trim();
     if (!text) throw new GeminiUnavailableError("bad_output", "empty reply");
 
-    const clipped = text.slice(0, MAX_TEXT_LENGTH);
-    aiTextCache.set(cacheKey, clipped, TEXT_CACHE_TTL_MS);
-    return clipped;
-  } catch (err) {
-    throw logFailure("text request", err);
-  }
+    return text.slice(0, MAX_TEXT_LENGTH);
+  });
+  aiTextCache.set(cacheKey, clipped, TEXT_CACHE_TTL_MS);
+  return clipped;
 }
 
 export async function generateWhatIfAnswerWithGemini(args: {
