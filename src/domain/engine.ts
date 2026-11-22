@@ -1,7 +1,9 @@
 import { calculateEmissionImpact } from "./emissions";
 import { calculateHouseholdExposureImpacts } from "./exposure";
+import { buildOutlook } from "./outlook";
 import {
   CurrentAirQuality,
+  DayOutlook,
   EmissionImpact,
   HouseholdProfile,
   MemberExposureImpact,
@@ -15,6 +17,7 @@ export interface EngineFacts {
   safeWindows: SafeWindow[];
   memberImpacts: MemberExposureImpact[];
   emissionImpact: EmissionImpact;
+  outlook: DayOutlook[];
 }
 
 /** Every number in a plan, computed before the model is called. */
@@ -26,6 +29,7 @@ export function computeEngineFacts(
     safeWindows: findSafeWindows(airQuality.hourly),
     memberImpacts: calculateHouseholdExposureImpacts(profile, airQuality.hourly),
     emissionImpact: calculateEmissionImpact(profile),
+    outlook: buildOutlook(airQuality.forecastHours ?? [], airQuality.hourly[0]?.time.slice(0, 10)),
   };
 }
 

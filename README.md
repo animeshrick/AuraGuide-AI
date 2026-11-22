@@ -28,6 +28,7 @@ On a bad smog day people know the air is unhealthy, but they do not know what to
 | Impact engine | Deterministic exposure and emissions calculations, so the numbers are computed and not guessed by the model |
 | Before and after view | Normal day against optimised day, with totals |
 | Safe-window timeline | Marks the cleanest hours in the next 24 hours for the school run, exercise and ventilation |
+| 3-day outlook | Shows the next three days with daytime AQI, a plain verdict, the cleanest time to go out and the best day for outings, laundry and errands |
 | Sensitive profiles | Tighter thresholds for asthma, pregnancy, infants, elderly people and outdoor workers |
 | Indoor air module | Guidance on cooking fuel, incense and coils, ventilation timing and purifier use |
 | What-if chat | Ask "what if I cycle instead of taking an auto?" and the engine recalculates before Gemini explains |
@@ -152,7 +153,7 @@ tests/
 | Efficiency | Air quality and AI responses cached, one model call per plan, structured JSON output, retries with a time budget, no heavy client libraries | `src/lib/cache.ts`, `src/ai/model-chain.ts` |
 | Testing | 490+ unit and component tests (about 98% statement and 92% branch coverage; CI fails below 95% and 88%), plus 37 Playwright end-to-end and accessibility tests | `tests/unit`, `tests/e2e`, `vitest.config.mts` |
 | Accessibility | Semantic HTML, skip link, keyboard-only flow, visible focus, AQI shown with text and not colour alone, three languages, axe checks in unit and end-to-end tests | `src/components`, `tests/unit/helpers/axe.ts`, `tests/e2e` |
-| Problem statement alignment | Personal hour-by-hour plan from live AQI, safer time windows, low-emission travel swaps, indoor air fixes, air-cleaning plants, going-out advice, what-if questions and a community advisory, with the impact of every choice in numbers | `src/domain`, `src/components/PlanResults.tsx` |
+| Problem statement alignment | Personal hour-by-hour plan from live AQI, safer time windows, a 3-day outlook, low-emission travel swaps, indoor air fixes, air-cleaning plants, going-out advice, what-if questions and a community advisory, with the impact of every choice in numbers | `src/domain`, `src/components/PlanResults.tsx` |
 | Google services | Gemini API through the official `@google/genai` SDK, with structured output and a three-model fallback chain | `src/ai/gemini.ts`, `src/ai/model-chain.ts` |
 
 ## Data and method notes

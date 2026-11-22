@@ -36,6 +36,20 @@ function makeResponse(
 const NOW_UTC = Date.UTC(2026, 10, 19, 12, 50);
 
 describe("buildAirQuality", () => {
+  it("keeps every later forecast hour for the outlook", () => {
+    const time = localTimes(96);
+    const aq = buildAirQuality(
+      makeResponse({ time, pm2_5: time.map(() => 80), pm10: time.map(() => 120) }),
+      "Delhi",
+      0,
+      0,
+      NOW_UTC
+    );
+    expect(aq?.hourly).toHaveLength(24);
+    expect(aq?.forecastHours?.length).toBeGreaterThan(70);
+    expect(aq?.forecastHours?.[0]).toEqual(aq?.hourly[0]);
+  });
+
   it("starts at the current hour in the city's own time zone", () => {
     const aq = buildAirQuality(makeResponse(), "Delhi", 28.6, 77.2, NOW_UTC);
     expect(aq).not.toBeNull();

@@ -155,6 +155,17 @@ const IndoorAirAdviceSchema = z.object({
   hazardWarnings: z.array(z.string().max(300)).max(6),
 });
 
+/** One day of the outlook, calculated by the engine. */
+const DayOutlookSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  averageAQI: z.number(),
+  category: AQICategorySchema,
+  peakAQI: z.number(),
+  level: z.enum(["good", "careful", "avoid"]),
+  bestWindow: z.object({ startHour: z.number(), endHour: z.number(), averageAQI: z.number() }),
+  isBestDay: z.boolean(),
+});
+
 /** The plan returned to the browser. Tests use it to check the response shape. */
 export const DailyPlanResponseSchema = z.object({
   city: z.string(),
@@ -175,6 +186,7 @@ export const DailyPlanResponseSchema = z.object({
   schedule: z.array(ScheduleItemSchema),
   indoorAir: IndoorAirAdviceSchema,
   communityTip: z.string(),
+  outlook: z.array(DayOutlookSchema),
 });
 
 /**

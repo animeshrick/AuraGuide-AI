@@ -76,6 +76,8 @@ export interface CurrentAirQuality {
   dataSource: AirQualitySource;
   /** First entry is the current local hour; entries are consecutive hours. */
   hourly: HourlyAirQuality[];
+  /** Every forecast hour from now on, up to several days ahead. Missing for modelled data. */
+  forecastHours?: HourlyAirQuality[];
 }
 
 export interface PlanAirQuality {
@@ -146,6 +148,24 @@ export const ADVISORY_AUDIENCES = ["housing_society", "school", "general_public"
 /** Who a community advisory is written for. */
 export type AdvisoryAudience = (typeof ADVISORY_AUDIENCES)[number];
 
+/** good: a fine day to be outside; careful: keep outings short; avoid: stay in where possible. */
+export type OutlookLevel = "good" | "careful" | "avoid";
+
+export interface DayOutlook {
+  /** Local date, for example "2026-11-23". */
+  date: string;
+  /** Average AQI over the daytime hours. */
+  averageAQI: number;
+  category: AQICategory;
+  /** The worst daytime hour. */
+  peakAQI: number;
+  level: OutlookLevel;
+  /** The cleanest two daytime hours. */
+  bestWindow: { startHour: number; endHour: number; averageAQI: number };
+  /** True for the cleanest day in the outlook. */
+  isBestDay: boolean;
+}
+
 export interface DailyPlanResponse {
   city: string;
   currentAQI: number;
@@ -158,6 +178,8 @@ export interface DailyPlanResponse {
   schedule: ScheduleItem[];
   indoorAir: IndoorAirAdvice;
   communityTip: string;
+  /** The next few days, calculated by the engine. Empty when there is no live forecast. */
+  outlook: DayOutlook[];
 }
 
 export interface PlanSummary {

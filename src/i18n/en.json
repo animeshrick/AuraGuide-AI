@@ -367,5 +367,19 @@
   },
   "a11y": {
     "loading": "Building your plan. Please wait."
+  },
+  "outlook": {
+    "title": "The next 3 days",
+    "intro": "Plan outings, laundry and errands for the cleanest day and time.",
+    "bestDay": "Best day",
+    "daytimeAir": "Daytime air",
+    "bestTime": "Cleanest time to go out: {time}",
+    "worstHour": "Worst hour of the day: AQI {aqi}",
+    "levels": {
+      "good": "Good day to be outside",
+      "careful": "Keep outings short",
+      "avoid": "Stay in where you can"
+    },
+    "unavailable": "The forecast for the coming days is not available right now. Today's plan above still uses the latest data."
   }
 }

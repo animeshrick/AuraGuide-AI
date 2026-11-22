@@ -6,6 +6,8 @@ const FETCH_TIMEOUT_MS = 8_000;
 /** Fewer usable hours than this and the forecast is treated as unavailable. */
 const MIN_USABLE_HOURS = 12;
 const HOURS_TO_KEEP = 24;
+/** Today plus the three days shown in the outlook. */
+const FORECAST_DAYS = 4;
 /** The modelled fallback assumes India Standard Time (UTC+5:30). */
 const MODELLED_UTC_OFFSET_SECONDS = 19_800;
 const MODELLED_CACHE_MS = 60 * 1000;
@@ -68,7 +70,7 @@ export async function geocodeCity(city: string): Promise<GeocodeResult> {
 
 /**
  * Turn an Open-Meteo response into the next 24 hours of AQI, starting at the
- * current local hour. Times are compared as text in the location's own time
+ * current local hour, plus every later forecast hour for the outlook. Times are compared as text in the location's own time
  * zone, so the result does not depend on where the server runs.
  * Returns null when there is not enough usable data.
  */
@@ -88,8 +90,8 @@ export function buildAirQuality(
   const start = times.findIndex((t) => t >= localNow);
   if (start < 0) return null;
 
-  const hourly: HourlyAirQuality[] = [];
-  for (let i = start; i < times.length && hourly.length < HOURS_TO_KEEP; i++) {
+  const forecastHours: HourlyAirQuality[] = [];
+  for (let i = start; i < times.length; i++) {
     const pm25 = pm25Series[i];
     const pm10 = pm10Series[i];
     const hasPm25 = typeof pm25 === "number" && Number.isFinite(pm25);
@@ -99,7 +101,7 @@ export function buildAirQuality(
     const p25 = hasPm25 ? (pm25 as number) : 0;
     const p10 = hasPm10 ? (pm10 as number) : 0;
     const { aqi, category } = calculateAQI(p25, p10);
-    hourly.push({
+    forecastHours.push({
       time: times[i],
       hour: parseInt(times[i].slice(11, 13), 10),
       pm25: Math.round(p25),
@@ -109,6 +111,7 @@ export function buildAirQuality(
     });
   }
 
+  const hourly = forecastHours.slice(0, HOURS_TO_KEEP);
   if (hourly.length < MIN_USABLE_HOURS) return null;
 
   const current = hourly[0];
@@ -125,6 +128,7 @@ export function buildAirQuality(
     updatedAt: new Date(nowMs).toISOString(),
     dataSource: "open-meteo",
     hourly,
+    forecastHours,
   };
 }
 
@@ -178,7 +182,7 @@ export function buildModelledAirQuality(
   };
 }
 
-/** Current air and a 24-hour forecast for a location, cached for a short time. */
+/** Current air, a 24-hour forecast and the hours for the outlook, cached for a short time. */
 export async function fetchAirQuality(
   latitude: number,
   longitude: number,
@@ -189,7 +193,7 @@ export async function fetchAirQuality(
   if (cached) return { ...cached, city: cityName };
 
   try {
-    const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${latitude}&longitude=${longitude}&hourly=pm10,pm2_5&forecast_days=2&timezone=auto`;
+    const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${latitude}&longitude=${longitude}&hourly=pm10,pm2_5&forecast_days=${FORECAST_DAYS}&timezone=auto`;
     const res = await fetch(url, {
       headers: HEADERS,
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),

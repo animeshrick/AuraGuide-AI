@@ -105,6 +105,7 @@ test.describe("results", () => {
     for (const heading of [
       en.results.hourlyTitle,
       en.metrics.safeWindows,
+      en.outlook.title,
       en.sections.timeline,
       en.plants.title,
       en.outing.title,
@@ -113,6 +114,16 @@ test.describe("results", () => {
     ]) {
       await expect(page.getByRole("heading", { name: heading })).toBeVisible();
     }
+  });
+
+  test("shows the next three days and marks the best one", async ({ page }) => {
+    await mockPlan(page);
+    await page.goto("/");
+    await createPlan(page);
+
+    const outlook = page.getByRole("region", { name: en.outlook.title });
+    await expect(outlook.getByRole("listitem")).toHaveCount(3);
+    await expect(outlook.getByText(en.outlook.bestDay)).toHaveCount(1);
   });
 
   test("lists all 24 hours in the data table", async ({ page }) => {

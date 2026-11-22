@@ -102,6 +102,7 @@ export function finalizeGeminiPlan(
     schedule,
     indoorAir: output.indoorAir,
     communityTip: output.communityTip,
+    outlook: facts.outlook,
   };
 }
 

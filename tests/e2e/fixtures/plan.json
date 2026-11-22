@@ -359,5 +359,46 @@
       "Avoid hard outdoor exercise in the early morning and evening, when ground-level particle levels are usually highest."
     ]
   },
-  "communityTip": "Ask your housing society or school to stop open burning of leaves and waste, and to organise carpools for the morning run."
+  "communityTip": "Ask your housing society or school to stop open burning of leaves and waste, and to organise carpools for the morning run.",
+  "outlook": [
+    {
+      "date": "2026-11-20",
+      "averageAQI": 242,
+      "category": "Poor",
+      "peakAQI": 318,
+      "level": "avoid",
+      "bestWindow": {
+        "startHour": 14,
+        "endHour": 16,
+        "averageAQI": 176
+      },
+      "isBestDay": false
+    },
+    {
+      "date": "2026-11-21",
+      "averageAQI": 168,
+      "category": "Moderate",
+      "peakAQI": 231,
+      "level": "careful",
+      "bestWindow": {
+        "startHour": 13,
+        "endHour": 15,
+        "averageAQI": 121
+      },
+      "isBestDay": true
+    },
+    {
+      "date": "2026-11-22",
+      "averageAQI": 205,
+      "category": "Poor",
+      "peakAQI": 276,
+      "level": "avoid",
+      "bestWindow": {
+        "startHour": 14,
+        "endHour": 16,
+        "averageAQI": 150
+      },
+      "isBestDay": false
+    }
+  ]
 }

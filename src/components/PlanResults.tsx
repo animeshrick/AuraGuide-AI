@@ -10,6 +10,7 @@ import { ImpactSummary } from "./ImpactSummary";
 import { GoingOutPanel } from "./GoingOutPanel";
 import { IndoorAirPanel } from "./IndoorAirPanel";
 import { MemberImpactCards } from "./MemberImpactCards";
+import { OutlookPanel } from "./OutlookPanel";
 import { SafeWindowTimeline } from "./SafeWindowTimeline";
 import { StatusBanner } from "./StatusBanner";
 import { PlantsPanel } from "./PlantsPanel";
@@ -59,6 +60,7 @@ export const PlanResults: React.FC<PlanResultsProps> = ({
       <ImpactSummary plan={plan} dict={dict} />
       <HourlyAQIChart hourly={plan.airQuality.hourly} dict={dict} />
       <SafeWindowTimeline safeWindows={plan.safeWindows} dict={dict} />
+      <OutlookPanel outlook={plan.outlook} language={language} dict={dict} />
       <BeforeAfterTimeline schedule={plan.schedule} dict={dict} />
       <MemberImpactCards impacts={plan.memberImpacts} dict={dict} />
       <EmissionsPanel impact={plan.emissionImpact} dict={dict} />
