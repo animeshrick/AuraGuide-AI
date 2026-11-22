@@ -4,7 +4,8 @@ import type { LucideIcon } from "lucide-react";
 import { PlantLight, suggestPlants } from "@/domain/plants";
 import { HouseholdProfile } from "@/domain/types";
 import { Dictionary } from "@/i18n";
-import { CARD, SECTION_HEADING } from "./styles";
+import { SectionHeader } from "./SectionHeader";
+import { CARD } from "./styles";
 
 interface PlantsPanelProps {
   profile: HouseholdProfile;
@@ -28,13 +29,14 @@ export const PlantsPanel: React.FC<PlantsPanelProps> = ({ profile, dict }) => {
 
   return (
     <section aria-labelledby={headingId} className={`${CARD} space-y-4`}>
-      <div>
-        <h2 id={headingId} className={SECTION_HEADING}>
-          <Sprout className="w-5 h-5 text-emerald-700" aria-hidden="true" />
-          {t.title}
-        </h2>
-        <p className="text-base text-slate-800 mt-1 leading-relaxed">{t.intro}</p>
-      </div>
+      <SectionHeader
+        id={headingId}
+        icon={Sprout}
+        iconColor="text-emerald-700"
+        title={t.title}
+        intro={t.intro}
+        largeIntro
+      />
 
       <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 flex items-start gap-3">
         <Info className="w-5 h-5 text-sky-700 shrink-0 mt-0.5" aria-hidden="true" />

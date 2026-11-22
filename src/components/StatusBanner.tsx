@@ -1,5 +1,7 @@
 import React from "react";
 import { AlertTriangle, Info, X, AlertCircle } from "lucide-react";
+import type { Dictionary } from "@/i18n";
+import type { ClientErrorCode } from "@/lib/api-client";
 
 type Tone = "info" | "warning" | "error";
 
@@ -55,3 +57,20 @@ export const StatusBanner: React.FC<StatusBannerProps> = ({
     )}
   </div>
 );
+
+/** The error banner for a failed request, in the chosen language. Renders nothing when there is no error. */
+export const RequestErrorBanner: React.FC<{
+  error: ClientErrorCode | null;
+  dict: Dictionary;
+  onDismiss: () => void;
+}> = ({ error, dict, onDismiss }) =>
+  error ? (
+    <StatusBanner
+      tone="error"
+      title={dict.errors.title}
+      onDismiss={onDismiss}
+      dismissLabel={dict.errors.dismiss}
+    >
+      {dict.errors[error]}
+    </StatusBanner>
+  ) : null;

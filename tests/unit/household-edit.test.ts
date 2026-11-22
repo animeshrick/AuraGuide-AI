@@ -6,6 +6,10 @@ import {
   newMember,
   nextMemberId,
   toggleSensitivity,
+  updateMemberById,
+  withActivityAdded,
+  withActivityRemoved,
+  withActivityUpdated,
 } from "@/domain/household-edit";
 import { LIMITS } from "@/domain/limits";
 import type { HouseholdProfile } from "@/domain/types";
@@ -108,5 +112,32 @@ describe("shared limits", () => {
     expect(HouseholdProfileSchema.safeParse(makeProfile({ members })).success).toBe(false);
     const tooOld = makeProfile({ members: [makeMember({ age: LIMITS.maxAge + 1 })] });
     expect(HouseholdProfileSchema.safeParse(tooOld).success).toBe(false);
+  });
+});
+
+describe("activity edits", () => {
+  const walk = { description: "Walk", preferredHour: 7, durationMinutes: 30 };
+  const yoga = { description: "Yoga", preferredHour: 17, durationMinutes: 60 };
+
+  it("adds a blank activity only below the limit", () => {
+    const member = makeMember({ outdoorActivities: [walk] });
+    expect(withActivityAdded(member, 2).outdoorActivities).toHaveLength(2);
+    expect(withActivityAdded(member, 1)).toBe(member);
+  });
+
+  it("updates and removes one activity by position", () => {
+    const member = makeMember({ outdoorActivities: [walk, yoga] });
+    expect(withActivityUpdated(member, 1, { durationMinutes: 45 }).outdoorActivities[1]).toEqual({
+      ...yoga,
+      durationMinutes: 45,
+    });
+    expect(withActivityRemoved(member, 0).outdoorActivities).toEqual([yoga]);
+  });
+
+  it("changes only the member with the given id", () => {
+    const members = [makeMember({ id: "a", age: 30 }), makeMember({ id: "b", age: 40 })];
+    const next = updateMemberById(members, "b", (m) => ({ ...m, age: 41 }));
+    expect(next.map((m) => m.age)).toEqual([30, 41]);
+    expect(next[0]).toBe(members[0]);
   });
 });

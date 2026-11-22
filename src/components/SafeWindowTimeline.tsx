@@ -4,7 +4,8 @@ import { formatHourRange } from "@/domain/labels";
 import { SafeWindow } from "@/domain/types";
 import { Dictionary } from "@/i18n";
 import { AQIBadge } from "./AQIBadge";
-import { CARD, MUTED, SECTION_HEADING } from "./styles";
+import { SectionHeader } from "./SectionHeader";
+import { CARD, MUTED } from "./styles";
 
 interface SafeWindowTimelineProps {
   safeWindows: SafeWindow[];
@@ -24,13 +25,12 @@ export const SafeWindowTimeline: React.FC<SafeWindowTimelineProps> = ({ safeWind
 
   return (
     <section aria-labelledby={headingId} className={`${CARD} space-y-4`}>
-      <div>
-        <h2 id={headingId} className={SECTION_HEADING}>
-          <Clock className="w-5 h-5 text-sky-700" aria-hidden="true" />
-          {dict.metrics.safeWindows}
-        </h2>
-        <p className={`${MUTED} mt-1`}>{dict.results.safeWindowsNote}</p>
-      </div>
+      <SectionHeader
+        id={headingId}
+        icon={Clock}
+        title={dict.metrics.safeWindows}
+        intro={dict.results.safeWindowsNote}
+      />
 
       {safeWindows.length === 0 ? (
         <p className={MUTED}>{dict.results.noSafeWindows}</p>

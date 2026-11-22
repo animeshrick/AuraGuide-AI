@@ -19,6 +19,64 @@ interface HomeSettingsProps {
   onPurifierChange: (value: boolean) => void;
 }
 
+/** The city or region, used to look up the air quality. */
+const CityField: React.FC<{
+  id: string;
+  value: string;
+  dict: Dictionary;
+  onChange: (city: string) => void;
+}> = ({ id: cityId, value: city, dict, onChange }) => (
+  <div>
+    <label htmlFor={cityId} className={LABEL_CLASS}>
+      {dict.form.city}
+    </label>
+    <input
+      id={cityId}
+      type="text"
+      required
+      minLength={LIMITS.cityMinLength}
+      maxLength={LIMITS.cityMaxLength}
+      autoComplete="address-level2"
+      value={city}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={dict.form.cityPlaceholder}
+      aria-describedby={`${cityId}-hint`}
+      className={`${INPUT_CLASS} px-4 py-2.5 rounded-xl`}
+    />
+    <p id={`${cityId}-hint`} className="text-xs text-slate-600 mt-1">
+      {dict.form.cityHint}
+    </p>
+  </div>
+);
+
+/** The household's main cooking fuel. */
+const FuelField: React.FC<{
+  id: string;
+  value: CookingFuel;
+  dict: Dictionary;
+  onChange: (fuel: CookingFuel) => void;
+}> = ({ id: fuelId, value: cookingFuel, dict, onChange }) => (
+  <div>
+    <label htmlFor={fuelId} className={LABEL_CLASS}>
+      {dict.form.cookingFuel}
+    </label>
+    <select
+      id={fuelId}
+      value={cookingFuel}
+      onChange={(e) => onChange(e.target.value as CookingFuel)}
+      aria-describedby={`${fuelId}-hint`}
+      className={`${INPUT_CLASS} px-4 py-2.5 rounded-xl`}
+    >
+      <option value="lpg">{dict.form.cookingLPG}</option>
+      <option value="electric">{dict.form.cookingElectric}</option>
+      <option value="biomass">{dict.form.cookingBiomass}</option>
+    </select>
+    <p id={`${fuelId}-hint`} className="text-xs text-slate-600 mt-1">
+      {dict.form.cookingHint}
+    </p>
+  </div>
+);
+
 /** The household-wide settings: city, cooking fuel, incense and purifier. */
 export const HomeSettings: React.FC<HomeSettingsProps> = ({
   uid,
@@ -47,47 +105,8 @@ export const HomeSettings: React.FC<HomeSettingsProps> = ({
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label htmlFor={cityId} className={LABEL_CLASS}>
-            {dict.form.city}
-          </label>
-          <input
-            id={cityId}
-            type="text"
-            required
-            minLength={LIMITS.cityMinLength}
-            maxLength={LIMITS.cityMaxLength}
-            autoComplete="address-level2"
-            value={city}
-            onChange={(e) => onCityChange(e.target.value)}
-            placeholder={dict.form.cityPlaceholder}
-            aria-describedby={`${cityId}-hint`}
-            className={`${INPUT_CLASS} px-4 py-2.5 rounded-xl`}
-          />
-          <p id={`${cityId}-hint`} className="text-xs text-slate-600 mt-1">
-            {dict.form.cityHint}
-          </p>
-        </div>
-
-        <div>
-          <label htmlFor={fuelId} className={LABEL_CLASS}>
-            {dict.form.cookingFuel}
-          </label>
-          <select
-            id={fuelId}
-            value={cookingFuel}
-            onChange={(e) => onCookingFuelChange(e.target.value as CookingFuel)}
-            aria-describedby={`${fuelId}-hint`}
-            className={`${INPUT_CLASS} px-4 py-2.5 rounded-xl`}
-          >
-            <option value="lpg">{dict.form.cookingLPG}</option>
-            <option value="electric">{dict.form.cookingElectric}</option>
-            <option value="biomass">{dict.form.cookingBiomass}</option>
-          </select>
-          <p id={`${fuelId}-hint`} className="text-xs text-slate-600 mt-1">
-            {dict.form.cookingHint}
-          </p>
-        </div>
+        <CityField id={cityId} value={city} dict={dict} onChange={onCityChange} />
+        <FuelField id={fuelId} value={cookingFuel} dict={dict} onChange={onCookingFuelChange} />
       </div>
 
       <div className="pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4">

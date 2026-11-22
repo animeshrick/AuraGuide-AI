@@ -13,7 +13,8 @@ import type { HourlyAirQuality, HouseholdProfile } from "@/domain/types";
 import type { Dictionary } from "@/i18n";
 import { LabelledSelect } from "./LabelledSelect";
 import { OutingAdviceView } from "./outing/OutingAdviceView";
-import { CARD, SECTION_HEADING } from "./styles";
+import { SectionHeader } from "./SectionHeader";
+import { CARD, NOTICE } from "./styles";
 
 interface GoingOutPanelProps {
   profile: HouseholdProfile;
@@ -53,13 +54,7 @@ export const GoingOutPanel: React.FC<GoingOutPanelProps> = ({ profile, hourly, d
 
   return (
     <section aria-labelledby={`${uid}-h`} className={`${CARD} space-y-5`}>
-      <div>
-        <h2 id={`${uid}-h`} className={SECTION_HEADING}>
-          <Clock className="w-5 h-5 text-sky-700" aria-hidden="true" />
-          {t.title}
-        </h2>
-        <p className="text-base text-slate-800 mt-1 leading-relaxed">{t.intro}</p>
-      </div>
+      <SectionHeader id={`${uid}-h`} icon={Clock} title={t.title} intro={t.intro} largeIntro />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <LabelledSelect
@@ -104,9 +99,7 @@ export const GoingOutPanel: React.FC<GoingOutPanelProps> = ({ profile, hourly, d
             dict={dict}
           />
         ) : (
-          <p className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-base text-amber-950">
-            {t.noData}
-          </p>
+          <p className={NOTICE}>{t.noData}</p>
         )}
       </div>
     </section>

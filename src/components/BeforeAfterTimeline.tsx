@@ -4,7 +4,8 @@ import { getAQICategory } from "@/domain/aqi";
 import { ScheduleItem } from "@/domain/types";
 import { Dictionary, formatMessage } from "@/i18n";
 import { AQIBadge } from "./AQIBadge";
-import { CARD, MUTED, SECTION_HEADING } from "./styles";
+import { SectionHeader } from "./SectionHeader";
+import { CARD } from "./styles";
 
 interface BeforeAfterTimelineProps {
   schedule: ScheduleItem[];
@@ -18,13 +19,12 @@ export const BeforeAfterTimeline: React.FC<BeforeAfterTimelineProps> = ({ schedu
 
   return (
     <section aria-labelledby={headingId} className={`${CARD} space-y-4`}>
-      <div>
-        <h2 id={headingId} className={SECTION_HEADING}>
-          <CalendarClock className="w-5 h-5 text-sky-700" aria-hidden="true" />
-          {dict.sections.timeline}
-        </h2>
-        <p className={`${MUTED} mt-1`}>{dict.results.timelineIntro}</p>
-      </div>
+      <SectionHeader
+        id={headingId}
+        icon={CalendarClock}
+        title={dict.sections.timeline}
+        intro={dict.results.timelineIntro}
+      />
 
       <ol className="space-y-4">
         {schedule.map((item, i) => (

@@ -8,8 +8,9 @@ import type { Dictionary, SupportedLanguage } from "@/i18n";
 import { AdvisoryResult, ApiClientError, ClientErrorCode, requestAdvisory } from "@/lib/api-client";
 import { AdvisoryResultCard } from "./advisory/AdvisoryResultCard";
 import { AudiencePicker } from "./advisory/AudiencePicker";
-import { StatusBanner } from "./StatusBanner";
-import { CARD, MUTED, SECTION_HEADING } from "./styles";
+import { SectionHeader } from "./SectionHeader";
+import { RequestErrorBanner } from "./StatusBanner";
+import { CARD } from "./styles";
 
 interface CommunityAdvisoryProps {
   city: string;
@@ -46,13 +47,12 @@ export const CommunityAdvisory: React.FC<CommunityAdvisoryProps> = ({ city, lang
 
   return (
     <section aria-labelledby={`${uid}-h`} className={`${CARD} space-y-5`}>
-      <div>
-        <h2 id={`${uid}-h`} className={SECTION_HEADING}>
-          <Megaphone className="w-5 h-5 text-sky-700" aria-hidden="true" />
-          {dict.sections.communityAdvisory}
-        </h2>
-        <p className={`${MUTED} mt-1`}>{dict.advisory.intro}</p>
-      </div>
+      <SectionHeader
+        id={`${uid}-h`}
+        icon={Megaphone}
+        title={dict.sections.communityAdvisory}
+        intro={dict.advisory.intro}
+      />
 
       <AudiencePicker
         name={`${uid}-audience`}
@@ -71,16 +71,7 @@ export const CommunityAdvisory: React.FC<CommunityAdvisoryProps> = ({ city, lang
         {loading ? dict.advisory.generating : dict.advisory.generate}
       </button>
 
-      {error && (
-        <StatusBanner
-          tone="error"
-          title={dict.errors.title}
-          onDismiss={() => setError(null)}
-          dismissLabel={dict.errors.dismiss}
-        >
-          {dict.errors[error]}
-        </StatusBanner>
-      )}
+      <RequestErrorBanner error={error} dict={dict} onDismiss={() => setError(null)} />
 
       <div aria-live="polite">
         {result && <AdvisoryResultCard key={resultId} result={result} dict={dict} />}

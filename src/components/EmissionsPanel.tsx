@@ -3,7 +3,8 @@ import { Leaf } from "lucide-react";
 import { EmissionImpact } from "@/domain/types";
 import { Dictionary, formatMessage } from "@/i18n";
 import { formatKg } from "@/lib/format";
-import { CARD, MUTED, SECTION_HEADING } from "./styles";
+import { SectionHeader } from "./SectionHeader";
+import { CARD, MUTED } from "./styles";
 
 interface EmissionsPanelProps {
   impact: EmissionImpact;
@@ -16,10 +17,12 @@ export const EmissionsPanel: React.FC<EmissionsPanelProps> = ({ impact, dict }) 
 
   return (
     <section aria-labelledby={headingId} className={`${CARD} space-y-4`}>
-      <h2 id={headingId} className={SECTION_HEADING}>
-        <Leaf className="w-5 h-5 text-teal-700" aria-hidden="true" />
-        {dict.results.emissionsHeading}
-      </h2>
+      <SectionHeader
+        id={headingId}
+        icon={Leaf}
+        iconColor="text-teal-700"
+        title={dict.results.emissionsHeading}
+      />
 
       <dl className="grid grid-cols-3 gap-3 text-center">
         <div className="rounded-xl bg-slate-50 border border-slate-200 p-3">

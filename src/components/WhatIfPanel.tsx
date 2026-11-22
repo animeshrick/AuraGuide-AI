@@ -6,12 +6,13 @@ import { staysAtHome } from "@/domain/modes";
 import type { HouseholdProfile } from "@/domain/types";
 import { Dictionary, formatMessage, SupportedLanguage } from "@/i18n";
 import { LabelledSelect } from "./LabelledSelect";
-import { StatusBanner } from "./StatusBanner";
-import { CARD, SECTION_HEADING } from "./styles";
+import { SectionHeader } from "./SectionHeader";
+import { RequestErrorBanner } from "./StatusBanner";
+import { CARD, NOTICE } from "./styles";
 import { ModeChoices, OptionMode } from "./whatif/ModeChoices";
 import { QuestionForm } from "./whatif/QuestionForm";
 import { useWhatIf } from "./whatif/useWhatIf";
-import { WhatIfAnswer } from "./whatif/WhatIfAnswer";
+import { WhatIfResultView } from "./whatif/WhatIfAnswer";
 
 interface WhatIfPanelProps {
   profile: HouseholdProfile;
@@ -19,7 +20,10 @@ interface WhatIfPanelProps {
   dict: Dictionary;
 }
 
-const NOTICE = "rounded-xl border border-amber-300 bg-amber-50 p-4 text-base text-amber-950";
+/** Shown when the chosen member does not travel, so there is no trip to change. */
+const NoCommuteNotice: React.FC<{ name: string; dict: Dictionary }> = ({ name, dict }) => (
+  <p className={NOTICE}>{formatMessage(dict.whatIf.unmatched.no_commute, { name })}</p>
+);
 
 /** "What if I travel a different way?": pick a member and a mode, or type a question. */
 export const WhatIfPanel: React.FC<WhatIfPanelProps> = ({ profile, language, dict }) => {
@@ -50,13 +54,13 @@ export const WhatIfPanel: React.FC<WhatIfPanelProps> = ({ profile, language, dic
 
   return (
     <section aria-labelledby={`${uid}-h`} className={`${CARD} space-y-6`}>
-      <div>
-        <h2 id={`${uid}-h`} className={SECTION_HEADING}>
-          <MessageCircleQuestion className="w-5 h-5 text-sky-700" aria-hidden="true" />
-          {dict.sections.whatIfTitle}
-        </h2>
-        <p className="text-base text-slate-800 mt-1 leading-relaxed">{dict.whatIf.intro}</p>
-      </div>
+      <SectionHeader
+        id={`${uid}-h`}
+        icon={MessageCircleQuestion}
+        title={dict.sections.whatIfTitle}
+        intro={dict.whatIf.intro}
+        largeIntro
+      />
 
       <LabelledSelect
         id={`${uid}-who`}
@@ -77,11 +81,7 @@ export const WhatIfPanel: React.FC<WhatIfPanelProps> = ({ profile, language, dic
           onChoose={chooseMode}
         />
       )}
-      {member && !canChange && (
-        <p className={NOTICE}>
-          {formatMessage(dict.whatIf.unmatched.no_commute, { name: member.name })}
-        </p>
-      )}
+      {member && !canChange && <NoCommuteNotice name={member.name} dict={dict} />}
 
       <QuestionForm
         id={`${uid}-q`}
@@ -93,24 +93,10 @@ export const WhatIfPanel: React.FC<WhatIfPanelProps> = ({ profile, language, dic
         }}
       />
 
-      {error && (
-        <StatusBanner
-          tone="error"
-          title={dict.errors.title}
-          onDismiss={clearError}
-          dismissLabel={dict.errors.dismiss}
-        >
-          {dict.errors[error]}
-        </StatusBanner>
-      )}
+      <RequestErrorBanner error={error} dict={dict} onDismiss={clearError} />
 
       <div aria-live="polite" aria-atomic="true">
-        {result && !result.matched && (
-          <p className={NOTICE}>
-            {formatMessage(dict.whatIf.unmatched[result.reason], { name: result.memberName })}
-          </p>
-        )}
-        {result && result.matched && <WhatIfAnswer result={result} dict={dict} />}
+        {result && <WhatIfResultView result={result} dict={dict} />}
       </div>
     </section>
   );

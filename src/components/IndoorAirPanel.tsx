@@ -2,7 +2,8 @@ import React, { useId } from "react";
 import { Home, AlertTriangle } from "lucide-react";
 import { IndoorAirAdvice } from "@/domain/types";
 import { Dictionary } from "@/i18n";
-import { CARD, SECTION_HEADING } from "./styles";
+import { SectionHeader } from "./SectionHeader";
+import { CARD } from "./styles";
 
 interface IndoorAirPanelProps {
   advice: IndoorAirAdvice;
@@ -15,10 +16,7 @@ export const IndoorAirPanel: React.FC<IndoorAirPanelProps> = ({ advice, dict }) 
 
   return (
     <section aria-labelledby={headingId} className={`${CARD} space-y-4`}>
-      <h2 id={headingId} className={SECTION_HEADING}>
-        <Home className="w-5 h-5 text-sky-700" aria-hidden="true" />
-        {dict.sections.indoorAir}
-      </h2>
+      <SectionHeader id={headingId} icon={Home} title={dict.sections.indoorAir} />
 
       <dl className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {(

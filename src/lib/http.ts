@@ -31,9 +31,9 @@ export function apiError(
 }
 
 /**
- * Who is calling. Uses the first address in x-forwarded-for, which hosting
- * platforms such as Vercel and Cloud Run set. Behind a proxy that does not
- * overwrite this header, a caller could vary it to dodge the limit.
+ * Who is calling. Uses the first address in x-forwarded-for, which Vercel sets.
+ * Behind a proxy that does not overwrite this header, a caller could vary it
+ * to dodge the limit.
  */
 export function getClientId(req: Request): string {
   const forwarded = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();

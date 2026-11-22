@@ -74,3 +74,40 @@ export function cleanProfile(
     language,
   };
 }
+
+/** Apply `change` to the member with this id and leave the others alone. */
+export function updateMemberById(
+  members: readonly HouseholdMember[],
+  id: string,
+  change: (member: HouseholdMember) => HouseholdMember
+): HouseholdMember[] {
+  return members.map((m) => (m.id === id ? change(m) : m));
+}
+
+/** Add a blank activity, unless the member already has the most allowed. */
+export function withActivityAdded(member: HouseholdMember, max: number): HouseholdMember {
+  if (member.outdoorActivities.length >= max) return member;
+  return { ...member, outdoorActivities: [...member.outdoorActivities, newActivity()] };
+}
+
+/** Change some fields of one activity. */
+export function withActivityUpdated(
+  member: HouseholdMember,
+  index: number,
+  updates: Partial<OutdoorActivity>
+): HouseholdMember {
+  return {
+    ...member,
+    outdoorActivities: member.outdoorActivities.map((a, i) =>
+      i === index ? { ...a, ...updates } : a
+    ),
+  };
+}
+
+/** Remove one activity. */
+export function withActivityRemoved(member: HouseholdMember, index: number): HouseholdMember {
+  return {
+    ...member,
+    outdoorActivities: member.outdoorActivities.filter((_, i) => i !== index),
+  };
+}

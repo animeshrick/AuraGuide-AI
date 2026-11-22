@@ -6,7 +6,7 @@ import { Hero } from "@/components/Hero";
 import { HouseholdForm } from "@/components/HouseholdForm";
 import { Navbar } from "@/components/Navbar";
 import { PlanResults } from "@/components/PlanResults";
-import { StatusBanner } from "@/components/StatusBanner";
+import { RequestErrorBanner } from "@/components/StatusBanner";
 import { usePlanSession } from "@/hooks/usePlanSession";
 import { getDictionary } from "@/i18n";
 
@@ -41,16 +41,7 @@ export default function HomePage() {
 
       <main id="main-content" ref={mainRef} tabIndex={-1} className="flex-1 outline-none">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
-          {error && (
-            <StatusBanner
-              tone="error"
-              title={dict.errors.title}
-              onDismiss={session.clearError}
-              dismissLabel={dict.errors.dismiss}
-            >
-              {dict.errors[error]}
-            </StatusBanner>
-          )}
+          <RequestErrorBanner error={error} dict={dict} onDismiss={session.clearError} />
 
           {plan && profile ? (
             <PlanResults

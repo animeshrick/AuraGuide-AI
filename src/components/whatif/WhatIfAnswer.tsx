@@ -4,6 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import { Dictionary, formatMessage } from "@/i18n";
 import type { WhatIfResult } from "@/lib/api-client";
 import { formatKg } from "@/lib/format";
+import { NOTICE } from "../styles";
 import { barWidths, WhatIfVerdict, whatIfVerdict } from "@/lib/whatif-verdict";
 
 /** Each verdict has a word, an icon and a colour, so colour is never the only signal. */
@@ -81,7 +82,7 @@ function toneFor(improvement: number): string {
 }
 
 /** The engine's result for one what-if change, with a verdict, two fact cards and the explanation. */
-export const WhatIfAnswer: React.FC<{
+const WhatIfAnswer: React.FC<{
   result: MatchedResult;
   dict: Dictionary;
 }> = ({ result, dict }) => {
@@ -207,3 +208,16 @@ const BarRow: React.FC<{ label: string; width: number; className: string; text?:
     {text && <span className="w-16 shrink-0 text-right font-semibold">{text}</span>}
   </div>
 );
+
+/** Either the answer, or a plain note saying why the question could not be answered. */
+export const WhatIfResultView: React.FC<{ result: WhatIfResult; dict: Dictionary }> = ({
+  result,
+  dict,
+}) =>
+  result.matched ? (
+    <WhatIfAnswer result={result} dict={dict} />
+  ) : (
+    <p className={NOTICE}>
+      {formatMessage(dict.whatIf.unmatched[result.reason], { name: result.memberName })}
+    </p>
+  );

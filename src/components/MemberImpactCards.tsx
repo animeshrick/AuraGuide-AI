@@ -3,7 +3,8 @@ import { Users } from "lucide-react";
 import { MemberExposureImpact } from "@/domain/types";
 import { Dictionary, formatMessage } from "@/i18n";
 import { formatDose } from "@/lib/format";
-import { CARD, SECTION_HEADING } from "./styles";
+import { SectionHeader } from "./SectionHeader";
+import { CARD } from "./styles";
 
 interface MemberImpactCardsProps {
   impacts: MemberExposureImpact[];
@@ -17,10 +18,7 @@ export const MemberImpactCards: React.FC<MemberImpactCardsProps> = ({ impacts, d
 
   return (
     <section aria-labelledby={headingId} className={`${CARD} space-y-4`}>
-      <h2 id={headingId} className={SECTION_HEADING}>
-        <Users className="w-5 h-5 text-sky-700" aria-hidden="true" />
-        {dict.results.memberHeading}
-      </h2>
+      <SectionHeader id={headingId} icon={Users} title={dict.results.memberHeading} />
 
       <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {impacts.map((m) => {

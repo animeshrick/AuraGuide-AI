@@ -102,7 +102,7 @@ Open http://localhost:3000.
 2. In Project Settings, Environment Variables, add `GEMINI_API_KEY` (and any optional variables above).
 3. Deploy. The API routes run as Node.js functions, and the key stays on the server.
 
-### Environment variables
+## Environment variables
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
