@@ -10,6 +10,7 @@ interface EmissionsPanelProps {
   dict: Dictionary;
 }
 
+/** Commute emissions today, before and after the suggested travel changes. */
 export const EmissionsPanel: React.FC<EmissionsPanelProps> = ({ impact, dict }) => {
   const headingId = useId();
 

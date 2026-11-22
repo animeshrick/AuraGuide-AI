@@ -1,33 +1,21 @@
-import { NextRequest } from "next/server";
-import { GeminiUnavailableError, generateWhatIfAnswerWithGemini } from "@/ai/gemini";
+import { generateWhatIfAnswerWithGemini } from "@/ai/gemini";
 import { WhatIfRequestSchema } from "@/ai/schemas";
 import { runWhatIf } from "@/domain/whatif";
 import { resolveAirQuality } from "@/lib/air-quality-service";
-import { apiError, apiJson, enforceRateLimit, readJsonBody } from "@/lib/http";
-import { validatePayload } from "@/lib/validation";
+import { cityNotFound, createJsonRoute } from "@/lib/api-route";
+import { apiJson } from "@/lib/http";
 
 export const runtime = "nodejs";
 
-export async function POST(req: NextRequest) {
-  const limited = enforceRateLimit(req);
-  if (limited) return limited;
-
-  const body = await readJsonBody(req);
-  if (!body.ok) return body.response;
-
-  const validation = validatePayload(WhatIfRequestSchema, body.data);
-  if (!validation.success) {
-    return apiError("invalid_request", "The what-if request is not valid.", 400, {
-      details: validation.errors,
-    });
-  }
-  const { profile, question, memberId, toMode, language } = validation.data;
-
-  try {
+/** Recalculate one member's day with a different commute, then explain it with Gemini. */
+export const POST = createJsonRoute({
+  name: "POST /api/whatif",
+  schema: WhatIfRequestSchema,
+  invalidMessage: "The what-if request is not valid.",
+  failureMessage: "Something went wrong while answering that question.",
+  handle: async ({ profile, question, memberId, toMode, language }) => {
     const lookup = await resolveAirQuality(profile.city, profile.coordinates);
-    if (!lookup.ok) {
-      return apiError("city_not_found", "We could not find that city.", 404);
-    }
+    if (!lookup.ok) return cityNotFound();
     const { airQuality } = lookup;
 
     // The engine recalculates first. The model then explains the new numbers.
@@ -36,7 +24,7 @@ export async function POST(req: NextRequest) {
       return apiJson({ ...outcome, question });
     }
 
-    const aiText = await generateWhatIfAnswerWithGemini({
+    const explanation = await generateWhatIfAnswerWithGemini({
       question,
       profile,
       outcome,
@@ -49,18 +37,8 @@ export async function POST(req: NextRequest) {
       ...outcome,
       question,
       currentAQI: airQuality.aqi,
-      explanation: aiText,
+      explanation,
       explanationSource: "gemini",
     });
-  } catch (err) {
-    if (err instanceof GeminiUnavailableError) {
-      return apiError(
-        "ai_unavailable",
-        "The AI service did not answer, so nothing was written. The server log shows the reason.",
-        503
-      );
-    }
-    console.error("POST /api/whatif failed:", err instanceof Error ? err.message : "unknown");
-    return apiError("internal_error", "Something went wrong while answering that question.", 500);
-  }
-}
+  },
+});

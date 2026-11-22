@@ -49,7 +49,7 @@ const matched = {
   recalculatedExposureDose: 8,
   exposureChangePercentage: -20,
   explanation: "The metro cuts tailpipe emissions.",
-  explanationSource: "rules",
+  explanationSource: "gemini",
 };
 
 describe("WhatIfPanel", () => {
@@ -96,7 +96,7 @@ describe("WhatIfPanel", () => {
     expect(
       screen.getByText("Changing from a petrol or diesel car to the metro or train")
     ).toBeTruthy();
-    expect(screen.getByText(new RegExp(dict.whatIf.viaRules))).toBeTruthy();
+    expect(screen.getByText(new RegExp(dict.whatIf.viaGemini))).toBeTruthy();
   });
 
   it("explains what the section is for, in plain words", () => {
@@ -368,7 +368,7 @@ describe("CommunityAdvisory", () => {
     audience: "housing_society",
     dataSource: "open-meteo",
     advisoryText: "Notice to residents: keep windows shut this evening & avoid outdoor play.",
-    advisorySource: "rules",
+    advisorySource: "gemini",
   };
 
   function renderAdvisory(language: SupportedLanguage = "en") {
@@ -407,7 +407,7 @@ describe("CommunityAdvisory", () => {
     await user.click(screen.getByRole("button", { name: dict.advisory.generate }));
 
     expect(await screen.findByText(advisory.advisoryText)).toBeTruthy();
-    expect(screen.getByText(dict.advisory.viaRules)).toBeTruthy();
+    expect(screen.getByText(dict.advisory.viaGemini)).toBeTruthy();
   });
 
   it("copies the advisory text to the clipboard", async () => {

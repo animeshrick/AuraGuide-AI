@@ -3,7 +3,7 @@ import { checkRateLimit } from "./rate-limiter";
 
 const MAX_BODY_BYTES = 32 * 1024;
 
-export type ApiErrorCode =
+type ApiErrorCode =
   | "rate_limited"
   | "invalid_json"
   | "payload_too_large"
@@ -12,12 +12,14 @@ export type ApiErrorCode =
   | "ai_unavailable"
   | "internal_error";
 
+/** A JSON response that is never cached. */
 export function apiJson(body: unknown, init: ResponseInit = {}): NextResponse {
   const headers = new Headers(init.headers);
   headers.set("Cache-Control", "no-store");
   return NextResponse.json(body, { ...init, headers });
 }
 
+/** A JSON error response with a stable code the browser can translate. */
 export function apiError(
   code: ApiErrorCode,
   message: string,
@@ -51,7 +53,7 @@ export function enforceRateLimit(req: Request): NextResponse | null {
   );
 }
 
-export type JsonBodyResult = { ok: true; data: unknown } | { ok: false; response: NextResponse };
+type JsonBodyResult = { ok: true; data: unknown } | { ok: false; response: NextResponse };
 
 /** Read a small JSON body. Larger bodies and invalid JSON get a clear error. */
 export async function readJsonBody(req: Request): Promise<JsonBodyResult> {

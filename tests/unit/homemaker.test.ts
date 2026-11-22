@@ -7,10 +7,9 @@ import {
 import { calculateMemberExposure } from "@/domain/exposure";
 import { COMMUTE_MODE_LABELS } from "@/domain/labels";
 import { staysAtHome } from "@/domain/modes";
-import { generateFallbackPlan } from "@/domain/rules-fallback";
 import { detectModeFromQuestion, pickMember, runWhatIf } from "@/domain/whatif";
 import { getDictionary } from "@/i18n";
-import { makeAirQuality, makeHourly, makeMember, makeProfile } from "./helpers/fixtures";
+import { makeHourly, makeMember, makeProfile } from "./helpers/fixtures";
 
 describe("staysAtHome", () => {
   it("is true for homemakers and people who work from home only", () => {
@@ -57,17 +56,6 @@ describe("homemaker in the engine", () => {
     const away = calculateMemberExposure(commuter, profile, hourly, false);
     const home = calculateMemberExposure(homemaker, profile, hourly, false);
     expect(home).not.toBe(away);
-  });
-
-  it("is left out of the commute advice in the rule-based plan", () => {
-    const profile = makeProfile({
-      members: [makeMember({ id: "h", name: "Meena", commuteMode: "homemaker" })],
-    });
-    const plan = generateFallbackPlan(profile, makeAirQuality());
-    expect(
-      plan.schedule.some((item) => /commute/i.test(item.normalActivity + item.optimizedActivity))
-    ).toBe(false);
-    expect(JSON.stringify(plan.schedule)).not.toMatch(/running the home/i);
   });
 
   it("has an English label for engine text", () => {

@@ -1,6 +1,6 @@
 import { HouseholdProfile } from "./types";
 
-export type PlantId =
+type PlantId =
   | "snake_plant"
   | "money_plant"
   | "spider_plant"
@@ -13,7 +13,7 @@ export type PlantId =
 
 export type PlantLight = "low" | "bright" | "sun";
 
-export interface PlantInfo {
+interface PlantInfo {
   id: PlantId;
   /** How much light it needs to stay healthy. */
   light: PlantLight;
@@ -44,9 +44,9 @@ export const MAX_PLANT_SUGGESTIONS = 5;
 /** Age up to which a child is likely to put leaves in the mouth. */
 const YOUNG_CHILD_MAX_AGE = 5;
 
-export type PlantNote = "child_safe" | "asthma_mould";
+type PlantNote = "child_safe" | "asthma_mould";
 
-export interface PlantSuggestions {
+interface PlantSuggestions {
   plants: PlantInfo[];
   /** Why the list was narrowed, so the page can say so. */
   notes: PlantNote[];

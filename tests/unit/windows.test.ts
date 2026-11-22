@@ -1,4 +1,4 @@
-import { indexByHour, aqiAtHour, averageAQI, meanOf } from "@/domain/hourly";
+import { indexByHour, averageAQI, meanOf } from "@/domain/hourly";
 import { effectiveAQI, protectionFactor } from "@/domain/protection";
 import {
   bestExerciseStartHour,
@@ -17,11 +17,6 @@ describe("hourly helpers", () => {
     const map = indexByHour(twoDays);
     expect(map.size).toBe(24);
     expect(map.get(3)).toBe(twoDays[3]);
-  });
-
-  it("looks up an hour with a fallback", () => {
-    expect(aqiAtHour(hourly, 14, -1)).toBe(hourly.find((h) => h.hour === 14)?.aqi);
-    expect(aqiAtHour([], 14, -1)).toBe(-1);
   });
 
   it("averages", () => {
@@ -76,7 +71,8 @@ describe("findSafeWindows", () => {
 describe("shifting outdoor activities", () => {
   it("moves a dirty-hour activity to a cleaner hour", () => {
     const to = shiftActivityHour(hourly, 7);
-    expect(aqiAtHour(hourly, to, Infinity)).toBeLessThan(aqiAtHour(hourly, 7, 0));
+    const byHour = indexByHour(hourly);
+    expect(byHour.get(to)!.aqi).toBeLessThan(byHour.get(7)!.aqi);
   });
 
   it("leaves the hour alone when there is no data", () => {

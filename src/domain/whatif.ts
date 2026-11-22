@@ -1,6 +1,5 @@
 import { dailyCommuteEmissionsKg, roundKg } from "./emissions";
 import { calculateMemberExposure } from "./exposure";
-import { COMMUTE_MODE_LABELS } from "./labels";
 import { staysAtHome } from "./modes";
 import {
   CommuteMode,
@@ -213,39 +212,4 @@ export function runWhatIf(
     recalculatedExposureDose: recalculatedDose,
     exposureChangePercentage: changePct,
   };
-}
-
-/** Plain English explanation built only from the engine's numbers, used when the AI service is unavailable. */
-export function explainWhatIfWithRules(
-  outcome: Extract<WhatIfOutcome, { matched: true }>,
-  aqi: number
-): string {
-  const name = outcome.memberName;
-  const from = COMMUTE_MODE_LABELS[outcome.fromMode];
-  const to = COMMUTE_MODE_LABELS[outcome.toMode];
-  const pct = Math.round(outcome.exposureChangePercentage);
-
-  const air =
-    pct < 0
-      ? `the air ${name} breathes in over the day would be about ${Math.abs(pct)}% cleaner`
-      : pct > 0
-        ? `the air ${name} breathes in over the day would be about ${pct}% more polluted`
-        : `the air ${name} breathes in over the day would stay about the same`;
-
-  const fumes =
-    outcome.savedEmissionsKg > 0
-      ? `Fumes from travel for the whole household would fall from ${outcome.householdBaselineEmissionsKg} kg to ${outcome.householdRecalculatedEmissionsKg} kg of CO2 a day`
-      : outcome.savedEmissionsKg < 0
-        ? `Fumes from travel for the whole household would rise from ${outcome.householdBaselineEmissionsKg} kg to ${outcome.householdRecalculatedEmissionsKg} kg of CO2 a day`
-        : "Fumes from travel for the whole household would not change";
-
-  const active = outcome.toMode === "walk" || outcome.toMode === "bicycle";
-  const advice =
-    active && aqi > 200
-      ? `The air is very bad today (AQI ${aqi}). Walking or cycling makes you breathe harder, so you take in more dirty air even though the trip makes no fumes. On days like this, choose the metro or wear a fitted N95 mask, and travel at the cleanest hour.`
-      : pct > 0
-        ? "Wear a fitted N95 mask and travel at the cleanest hour to keep the dirty air down."
-        : "This looks like a good change on a smog day. Keep a fitted N95 mask for the walk to the stop.";
-
-  return `If ${name} changed from ${from} to ${to}, ${air}. ${fumes}.\n\nWhat to do: ${advice}`;
 }

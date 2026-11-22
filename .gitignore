@@ -10,9 +10,11 @@ lerna-debug.log*
 .next/
 out/
 
-# Cloudflare (OpenNext) build output
-.open-next/
-.wrangler/
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# Vercel
+.vercel/
 
 # Environment files
 .env

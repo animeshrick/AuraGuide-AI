@@ -140,9 +140,13 @@ export interface IndoorAirAdvice {
   hazardWarnings: string[];
 }
 
+/** Who a community advisory can be written for, in the order they are offered. */
+export const ADVISORY_AUDIENCES = ["housing_society", "school", "general_public"] as const;
+
+/** Who a community advisory is written for. */
+export type AdvisoryAudience = (typeof ADVISORY_AUDIENCES)[number];
+
 export interface DailyPlanResponse {
-  /** true when the rule-based plan is shown instead of the AI plan. */
-  isFallback: boolean;
   city: string;
   currentAQI: number;
   currentCategory: AQICategory;
@@ -165,7 +169,7 @@ export interface PlanSummary {
   emissionsSavedPct: number;
 }
 
-export type WhatIfReason = "no_mode" | "same_mode" | "no_commute";
+type WhatIfReason = "no_mode" | "same_mode" | "no_commute";
 
 export type WhatIfOutcome =
   | {

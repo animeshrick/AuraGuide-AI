@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { DailyPlanResponseSchema } from "@/ai/schemas";
-import { generateFallbackPlan } from "@/domain/rules-fallback";
+import { makePlan } from "./helpers/plan";
 import { computeEngineFacts } from "@/domain/engine";
 import { resetRateLimits } from "@/lib/rate-limiter";
 import { makeAirQuality, makeProfile } from "./helpers/fixtures";
@@ -41,9 +41,7 @@ beforeEach(() => {
   resetRateLimits();
   vi.stubEnv("RATE_LIMIT_PER_MINUTE", "100");
   mocks.resolveAirQuality.mockReset().mockResolvedValue({ ok: true, airQuality });
-  mocks.generatePlan
-    .mockReset()
-    .mockResolvedValue({ ...generateFallbackPlan(profile, airQuality), isFallback: false });
+  mocks.generatePlan.mockReset().mockResolvedValue(makePlan(profile, airQuality));
   mocks.generateWhatIf.mockReset().mockResolvedValue("AI explanation.");
   mocks.generateAdvisory.mockReset().mockResolvedValue("AI advisory.");
   vi.spyOn(console, "error").mockImplementation(() => {});
@@ -116,13 +114,11 @@ describe("POST /api/plan", () => {
     expect(res.status).toBe(503);
     const body = await res.json();
     expect(body.code).toBe("ai_unavailable");
-    expect(body.isFallback).toBeUndefined();
     expect(body.schedule).toBeUndefined();
   });
 
   it("returns the Gemini plan when there is one", async () => {
     const body = await (await planPOST(post("/api/plan", profile))).json();
-    expect(body.isFallback).toBe(false);
     expect(DailyPlanResponseSchema.safeParse(body).success).toBe(true);
   });
 

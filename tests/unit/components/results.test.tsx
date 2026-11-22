@@ -2,7 +2,6 @@
 import React from "react";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { generateFallbackPlan } from "@/domain/rules-fallback";
 import type { DailyPlanResponse } from "@/domain/types";
 import { getDictionary, type SupportedLanguage } from "@/i18n";
 import { BeforeAfterTimeline } from "@/components/BeforeAfterTimeline";
@@ -11,6 +10,7 @@ import { PlanResults } from "@/components/PlanResults";
 import { SafeWindowTimeline } from "@/components/SafeWindowTimeline";
 import { accessibilityProblems } from "../helpers/axe";
 import { makeAirQuality, makeHourly, makeProfile } from "../helpers/fixtures";
+import { makePlan as buildPlan } from "../helpers/plan";
 
 afterEach(cleanup);
 
@@ -18,7 +18,7 @@ const profile = makeProfile();
 const airQuality = makeAirQuality();
 
 function makePlan(overrides: Partial<DailyPlanResponse> = {}): DailyPlanResponse {
-  return { ...generateFallbackPlan(profile, airQuality), ...overrides };
+  return { ...buildPlan(profile, airQuality), ...overrides };
 }
 
 function renderResults(
@@ -150,32 +150,14 @@ describe("PlanResults", () => {
     expect(ref.current?.getAttribute("tabindex")).toBe("-1");
   });
 
-  it("explains that the plan came from the built-in rules", () => {
-    renderResults(makePlan({ isFallback: true }));
-    expect(screen.getByText(getDictionary("en").banners.fallbackPlan)).toBeTruthy();
-    expect(screen.queryByText(getDictionary("en").banners.englishOnly)).toBeNull();
-  });
-
-  it("does not show the fallback banner for a model plan", () => {
-    renderResults(makePlan({ isFallback: false }));
-    expect(screen.queryByText(getDictionary("en").banners.fallbackPlan)).toBeNull();
-  });
-
   it("warns when the air quality numbers are modelled rather than live", () => {
     const plan = makePlan();
     renderResults({ ...plan, airQuality: { ...plan.airQuality, source: "modelled" } });
     expect(screen.getByText(getDictionary("en").banners.modelled)).toBeTruthy();
   });
 
-  it("tells Hindi readers that fallback text is in English", () => {
-    renderResults(makePlan({ isFallback: true }), "hi");
-    const dict = getDictionary("hi");
-    expect(screen.getByText(dict.banners.fallbackPlan)).toBeTruthy();
-    expect(screen.getByText(dict.banners.englishOnly)).toBeTruthy();
-  });
-
   it("shows the updating banner while the language changes", () => {
-    renderResults(makePlan({ isFallback: false }), "bn", true);
+    renderResults(makePlan(), "bn", true);
     expect(screen.getByText(getDictionary("bn").banners.updatingLanguage)).toBeTruthy();
   });
 

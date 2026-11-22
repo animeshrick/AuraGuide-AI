@@ -1,6 +1,5 @@
 import { aiPlanCache, aiTextCache } from "@/lib/cache";
 import { computeEngineFacts } from "@/domain/engine";
-import { generateFallbackPlan } from "@/domain/rules-fallback";
 import { runWhatIf } from "@/domain/whatif";
 import { DailyPlanResponseSchema } from "@/ai/schemas";
 import {
@@ -11,7 +10,6 @@ import {
   generateOptimizedPlanWithGemini,
   generateWhatIfAnswerWithGemini,
   planCacheKey,
-  setGeminiRetryDelaysForTests,
 } from "@/ai/gemini";
 import { makeAirQuality, makeHourly, makeMember, makeProfile } from "./helpers/fixtures";
 
@@ -85,7 +83,7 @@ beforeEach(() => {
   vi.stubEnv("GEMINI_MODEL", "gemini-test");
   vi.stubEnv("GEMINI_MODEL_2", "model-two");
   vi.stubEnv("GEMINI_MODEL_3", "model-three");
-  setGeminiRetryDelaysForTests([0, 0]);
+  vi.stubEnv("GEMINI_RETRY_BASE_MS", "0");
   vi.spyOn(console, "error").mockImplementation(() => {});
   vi.spyOn(console, "warn").mockImplementation(() => {});
 });
@@ -121,7 +119,6 @@ describe("generateOptimizedPlanWithGemini", () => {
   it("returns a plan in the exact shape the browser expects", async () => {
     reply(validOutput);
     const plan = await generateOptimizedPlanWithGemini(profile, airQuality, facts);
-    expect(plan.isFallback).toBe(false);
     expect(DailyPlanResponseSchema.safeParse(plan).success).toBe(true);
   });
 
@@ -313,14 +310,11 @@ describe("text answers", () => {
   });
 });
 
-describe("fallback and AI plans agree on shape", () => {
-  it("both satisfy the same response schema", async () => {
+describe("plan shape", () => {
+  it("matches the response schema the browser relies on", async () => {
     reply(validOutput);
     const ai = await generateOptimizedPlanWithGemini(profile, airQuality, facts);
-    const rules = generateFallbackPlan(profile, airQuality, facts);
     expect(DailyPlanResponseSchema.safeParse(ai).success).toBe(true);
-    expect(DailyPlanResponseSchema.safeParse(rules).success).toBe(true);
-    expect(Object.keys(ai!).sort()).toEqual(Object.keys(rules).sort());
   });
 });
 
@@ -366,8 +360,8 @@ describe("model fallback", () => {
 
     const plan = await generateOptimizedPlanWithGemini(profile, airQuality, facts);
 
-    expect(plan.isFallback).toBe(false);
     expect(modelsCalled()).toEqual(["gemini-test", "gemini-test", "gemini-test", "model-two"]);
+    expect(plan?.summary).toBe(validOutput.summary);
   });
 
   it("moves to model three when model two is also busy", async () => {

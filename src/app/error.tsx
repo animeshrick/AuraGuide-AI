@@ -2,6 +2,7 @@
 
 import React from "react";
 
+/** Shown when a page fails to render, with a way to try again. */
 export default function ErrorPage({
   reset,
 }: {

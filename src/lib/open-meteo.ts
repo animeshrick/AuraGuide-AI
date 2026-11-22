@@ -14,7 +14,7 @@ const GEOCODE_CACHE_MS = 24 * 60 * 60 * 1000;
 
 const HEADERS = { "User-Agent": "AuraGuide-AI/1.0" };
 
-export type GeocodeResult =
+type GeocodeResult =
   | { status: "ok"; name: string; latitude: number; longitude: number }
   | { status: "not_found" }
   | { status: "unavailable" };
@@ -178,6 +178,7 @@ export function buildModelledAirQuality(
   };
 }
 
+/** Current air and a 24-hour forecast for a location, cached for a short time. */
 export async function fetchAirQuality(
   latitude: number,
   longitude: number,

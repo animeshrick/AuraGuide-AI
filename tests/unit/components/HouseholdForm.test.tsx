@@ -368,4 +368,24 @@ describe("HouseholdForm: smoking or vaping question", () => {
       0
     );
   });
+  it("shows the right duration after an earlier activity is removed", async () => {
+    const member = makeMember({
+      id: "a",
+      name: "Asha",
+      outdoorActivities: [
+        { description: "Walk", preferredHour: 7, durationMinutes: 30 },
+        { description: "Yoga", preferredHour: 17, durationMinutes: 90 },
+      ],
+    });
+    const { onSubmit, user } = setup({ initialProfile: makeProfile({ members: [member] }) });
+
+    await user.click(screen.getAllByRole("button", { name: /remove activity 1/i })[0]);
+
+    const duration = screen.getByLabelText("Minutes") as HTMLInputElement;
+    expect(duration.value).toBe("90");
+    await user.click(submitButton());
+    expect(onSubmit.mock.calls[0][0].members[0].outdoorActivities).toEqual([
+      { description: "Yoga", preferredHour: 17, durationMinutes: 90 },
+    ]);
+  });
 });

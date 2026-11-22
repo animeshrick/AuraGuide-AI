@@ -14,10 +14,12 @@ export const COMMUTE_MODE_LABELS: Record<CommuteMode, string> = {
   homemaker: "running the home",
 };
 
+/** An hour of the day as "HH:00". */
 export function formatHour(hour: number): string {
   return `${String(hour).padStart(2, "0")}:00`;
 }
 
+/** Two hours as "HH:00 - HH:00". */
 export function formatHourRange(startHour: number, endHour: number): string {
   return `${formatHour(startHour)} - ${formatHour(endHour)}`;
 }

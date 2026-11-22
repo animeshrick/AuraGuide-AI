@@ -55,6 +55,7 @@ function calculateSubIndex(concentration: number, breakpoints: Breakpoint[]): nu
   return 0;
 }
 
+/** Indian National AQI from PM2.5 and PM10: the higher sub-index wins. */
 export function calculateAQI(
   pm25: number,
   pm10: number = 0
@@ -73,6 +74,7 @@ export function calculateAQI(
   return { aqi, category, primaryPollutant };
 }
 
+/** The category name for an AQI value. */
 export function getAQICategory(aqi: number): AQICategory {
   if (aqi <= 50) return "Good";
   if (aqi <= 100) return "Satisfactory";
@@ -82,6 +84,7 @@ export function getAQICategory(aqi: number): AQICategory {
   return "Severe";
 }
 
+/** Chart colour for a category. */
 export function getAQIColor(category: AQICategory): string {
   switch (category) {
     case "Good":
@@ -99,6 +102,7 @@ export function getAQIColor(category: AQICategory): string {
   }
 }
 
+/** Badge class names for a category. Text always goes with the colour. */
 export function getAQIBadgeClass(category: AQICategory): string {
   switch (category) {
     case "Good":

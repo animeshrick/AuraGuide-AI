@@ -11,6 +11,7 @@ interface NavbarProps {
   hasPlan?: boolean;
 }
 
+/** Top bar with the app name, the language switch and a "new plan" button. */
 export const Navbar: React.FC<NavbarProps> = ({
   currentLanguage,
   onLanguageChange,

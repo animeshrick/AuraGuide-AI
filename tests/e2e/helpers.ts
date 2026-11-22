@@ -29,7 +29,7 @@ export const sampleWhatIf = {
   recalculatedExposureDose: 8,
   exposureChangePercentage: -20,
   explanation: "Taking the metro removes tailpipe emissions for this trip.",
-  explanationSource: "rules",
+  explanationSource: "gemini",
 };
 
 export const sampleAdvisory = {
@@ -40,7 +40,7 @@ export const sampleAdvisory = {
   dataSource: "open-meteo",
   advisoryText:
     "Notice to residents: air quality is severe today. Please keep windows closed and avoid outdoor play.",
-  advisorySource: "rules",
+  advisorySource: "gemini",
 };
 
 /** Answer /api/plan with a fixed body. Returns the list of request bodies the page sent. */

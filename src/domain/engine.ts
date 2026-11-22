@@ -17,6 +17,7 @@ export interface EngineFacts {
   emissionImpact: EmissionImpact;
 }
 
+/** Every number in a plan, computed before the model is called. */
 export function computeEngineFacts(
   profile: HouseholdProfile,
   airQuality: CurrentAirQuality
@@ -28,6 +29,7 @@ export function computeEngineFacts(
   };
 }
 
+/** The part of the air quality data the browser shows. */
 export function toPlanAirQuality(airQuality: CurrentAirQuality): PlanAirQuality {
   return {
     source: airQuality.dataSource,

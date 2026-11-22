@@ -3,7 +3,7 @@ import { averageAQI, indexByHour, meanOf } from "./hourly";
 import { formatHourRange } from "./labels";
 import { AQICategory, HourlyAirQuality, SafeWindow } from "./types";
 
-export interface Block {
+interface Block {
   startHour: number;
   endHour: number;
   averageAQI: number;

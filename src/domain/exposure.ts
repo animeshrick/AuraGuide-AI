@@ -195,6 +195,7 @@ function describeChanges(
   return changes;
 }
 
+/** Normal-day and optimised-day exposure for every member. */
 export function calculateHouseholdExposureImpacts(
   profile: HouseholdProfile,
   hourlyData: HourlyAirQuality[]

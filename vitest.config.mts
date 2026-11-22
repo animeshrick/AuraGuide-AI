@@ -1,4 +1,4 @@
-import path from "path";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -18,16 +18,16 @@ export default defineConfig({
         "src/i18n/**",
         "src/components/**",
         "src/app/api/**",
-        "src/app/page.tsx",
+        "src/app/**/*.tsx",
       ],
       // Type declarations have no runtime code to cover.
       exclude: ["src/domain/types.ts"],
-      thresholds: { statements: 90, lines: 90, functions: 85, branches: 80 },
+      thresholds: { statements: 95, lines: 95, functions: 95, branches: 88 },
     },
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
 });

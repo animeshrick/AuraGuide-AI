@@ -1,9 +1,4 @@
-import {
-  detectModeFromQuestion,
-  explainWhatIfWithRules,
-  pickMember,
-  runWhatIf,
-} from "@/domain/whatif";
+import { detectModeFromQuestion, pickMember, runWhatIf } from "@/domain/whatif";
 import { makeHourly, makeMember, makeProfile } from "./helpers/fixtures";
 
 describe("detectModeFromQuestion", () => {
@@ -155,34 +150,5 @@ describe("runWhatIf with a chosen mode", () => {
       matched: false,
       reason: "no_commute",
     });
-  });
-});
-
-describe("explainWhatIfWithRules", () => {
-  const hourly = makeHourly(6);
-  const profile = makeProfile();
-
-  it("describes the change using the engine's own numbers", () => {
-    const outcome = runWhatIf(profile, hourly, "What if I take the metro instead?", "m1");
-    if (!outcome.matched) throw new Error("expected a match");
-    const text = explainWhatIfWithRules(outcome, 250);
-    expect(text).toContain("Rajesh");
-    expect(text).toContain(String(outcome.householdBaselineEmissionsKg));
-    expect(text).toContain(String(outcome.householdRecalculatedEmissionsKg));
-  });
-
-  it("uses everyday words instead of technical terms", () => {
-    const outcome = runWhatIf(profile, hourly, "What if I take the metro instead?", "m1");
-    if (!outcome.matched) throw new Error("expected a match");
-    const text = explainWhatIfWithRules(outcome, 250);
-    expect(text).toMatch(/breathes in/);
-    expect(text).toMatch(/Fumes from travel/);
-    expect(text).not.toMatch(/PM2\.5|exposure|CO2e|emissions/i);
-  });
-
-  it("warns that walking or cycling in very bad air raises the dose", () => {
-    const outcome = runWhatIf(profile, hourly, "What if I walk?", "m1");
-    if (!outcome.matched) throw new Error("expected a match");
-    expect(explainWhatIfWithRules(outcome, 320)).toMatch(/N95/);
   });
 });

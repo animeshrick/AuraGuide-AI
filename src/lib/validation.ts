@@ -1,11 +1,11 @@
 import { z } from "zod";
 
-export interface ValidationSuccess<T> {
+interface ValidationSuccess<T> {
   success: true;
   data: T;
 }
 
-export interface ValidationFailure {
+interface ValidationFailure {
   success: false;
   errors: { field: string; message: string }[];
 }

@@ -15,10 +15,12 @@ export const dictionaries: Record<SupportedLanguage, Dictionary> = {
   bn,
 };
 
+/** True when the value is a language the app supports. */
 export function isSupportedLanguage(value: unknown): value is SupportedLanguage {
   return typeof value === "string" && (SUPPORTED_LANGUAGES as readonly string[]).includes(value);
 }
 
+/** The text for a language, falling back to English. */
 export function getDictionary(lang: SupportedLanguage = "en"): Dictionary {
   return dictionaries[lang] ?? dictionaries.en;
 }

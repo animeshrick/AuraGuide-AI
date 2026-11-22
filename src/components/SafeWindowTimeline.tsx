@@ -18,6 +18,7 @@ const ICONS: Record<SafeWindow["activity"], React.ReactNode> = {
   general_outdoor: <Sun className="w-4 h-4 text-slate-700" aria-hidden="true" />,
 };
 
+/** The cleanest time windows today for exercise, the school run and airing the home. */
 export const SafeWindowTimeline: React.FC<SafeWindowTimelineProps> = ({ safeWindows, dict }) => {
   const headingId = useId();
 

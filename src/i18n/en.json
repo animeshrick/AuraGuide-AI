@@ -1,7 +1,6 @@
 {
   "appTitle": "AuraGuide AI",
   "appTagline": "Urban Air Quality & Smog Day Assistant",
-  "appDescription": "Turns the live air quality forecast into a safer daily plan. Exposure and emissions are worked out by calculation, not guesswork.",
   "nav": {
     "skipToContent": "Skip to main content",
     "newProfile": "New profile",
@@ -107,8 +106,6 @@
   },
   "sections": {
     "timeline": "Normal day and optimized day, side by side",
-    "normalDay": "Normal day",
-    "optimizedDay": "Optimized day",
     "indoorAir": "Indoor air",
     "whatIfTitle": "What if I travel a different way?",
     "communityAdvisory": "Neighbourhood advisory"
@@ -139,11 +136,9 @@
       "general_outdoor": "Outdoor errands"
     },
     "timelineIntro": "What changes between a normal day and the optimized day, hour by hour.",
-    "colTime": "Time",
     "colNormal": "Normal day",
     "colOptimized": "Optimized day",
     "colWhy": "Why",
-    "aqiValue": "AQI {aqi}",
     "forMember": "For {name}",
     "actionTypes": {
       "schedule_shift": "Change timing",
@@ -171,8 +166,6 @@
   },
   "banners": {
     "modelled": "Live air quality data could not be reached, so these numbers use a typical winter pattern for the region. Use them as a rough guide only.",
-    "fallbackPlan": "The AI service was not available, so this plan was built by the app's built-in rules. The numbers are calculated the same way.",
-    "englishOnly": "Some explanations in this plan are in English because the built-in rules write them.",
     "updatingLanguage": "Updating the plan in your chosen language..."
   },
   "errors": {
@@ -198,7 +191,6 @@
       "no_commute": "{name} does not travel for work or school, so there is nothing to change here. Choose someone else."
     },
     "viaGemini": "Explained by Gemini",
-    "viaRules": "Explained by built-in rules",
     "numbersNote": "The numbers above come from the app's own calculation.",
     "pickMode": "How would they travel instead?",
     "options": {
@@ -366,8 +358,7 @@
     "copied": "Copied",
     "copyFailed": "Could not copy. Select the text and copy it by hand.",
     "shareWhatsApp": "Share on WhatsApp",
-    "viaGemini": "Written by Gemini",
-    "viaRules": "Written by built-in rules"
+    "viaGemini": "Written by Gemini"
   },
   "footer": {
     "disclaimer": "AuraGuide AI gives general guidance and is not medical advice. If you have a heart or lung condition, follow your doctor's advice.",
@@ -375,7 +366,6 @@
     "method": "How the numbers work: each person's exposure adds up the PM2.5 they breathe hour by hour, weighted for age and health. Emissions use a fixed factor per kilometre for each kind of transport."
   },
   "a11y": {
-    "planReady": "Your plan for {city} is ready.",
     "loading": "Building your plan. Please wait."
   }
 }

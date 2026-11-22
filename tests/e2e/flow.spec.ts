@@ -125,13 +125,6 @@ test.describe("results", () => {
     await expect(table.getByRole("row")).toHaveCount(25);
   });
 
-  test("explains that the plan came from the built-in rules", async ({ page }) => {
-    await mockPlan(page, { ...samplePlan, isFallback: true });
-    await page.goto("/");
-    await createPlan(page);
-    await expect(page.getByText(en.banners.fallbackPlan)).toBeVisible();
-  });
-
   test("warns when the air quality data is modelled", async ({ page }) => {
     await mockPlan(page, {
       ...samplePlan,
@@ -173,16 +166,6 @@ test.describe("language", () => {
     await switchLanguage(page, "en", "hi");
     await expect.poll(() => requests.length).toBe(2);
     expect(requests[1].language).toBe("hi");
-  });
-
-  test("tells Hindi readers when the plan text is written in English by the built-in rules", async ({
-    page,
-  }) => {
-    await mockPlan(page, { ...samplePlan, isFallback: true });
-    await page.goto("/");
-    await switchLanguage(page, "en", "hi");
-    await page.getByRole("button", { name: hi.form.generatePlan }).click();
-    await expect(page.getByText(hi.banners.englishOnly)).toBeVisible();
   });
 
   test("keeps the chosen language when the page is reloaded", async ({ page }) => {

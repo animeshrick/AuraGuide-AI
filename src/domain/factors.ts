@@ -123,6 +123,7 @@ export const DAY_MODEL = {
   maxCommuteHoursPerLeg: 1,
 } as const;
 
+/** True for the hours counted as sleep (22:00 to 06:00). */
 export function isSleepHour(hour: number): boolean {
   return hour >= 22 || hour < 6;
 }

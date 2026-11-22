@@ -1,6 +1,7 @@
 import { EngineFacts } from "@/domain/engine";
 import { formatHour, formatHourRange } from "@/domain/labels";
 import {
+  AdvisoryAudience,
   CurrentAirQuality,
   HouseholdProfile,
   SupportedLanguageCode,
@@ -21,6 +22,7 @@ Rules:
 - Plain text only. No markdown, no HTML, no emojis.
 - ${UNTRUSTED_DATA_RULES}`;
 
+/** The sentence that tells Gemini which language and tone to write in. */
 export function languageInstruction(language: SupportedLanguageCode): string {
   switch (language) {
     case "hi":
@@ -43,6 +45,7 @@ function untrustedMembers(profile: HouseholdProfile) {
   };
 }
 
+/** The plan prompt: household, hourly air and the engine's numbers, which the model must not change. */
 export function buildPlanPrompt(
   profile: HouseholdProfile,
   airQuality: CurrentAirQuality,
@@ -112,6 +115,7 @@ Return JSON with these fields:
 ${languageInstruction(language)}`;
 }
 
+/** The what-if prompt: the question plus the engine's recalculated figures to explain. */
 export function buildWhatIfPrompt(args: {
   question: string;
   profile: HouseholdProfile;
@@ -159,11 +163,12 @@ Use only the numbers above.
 ${languageInstruction(language)}`;
 }
 
+/** The community advisory prompt for one audience, city and AQI. */
 export function buildAdvisoryPrompt(args: {
   city: string;
   aqi: number;
   category: string;
-  audience: "housing_society" | "school" | "general_public";
+  audience: AdvisoryAudience;
   language: SupportedLanguageCode;
   cleanestWindow?: string;
 }): string {

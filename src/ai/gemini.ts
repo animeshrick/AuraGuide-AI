@@ -1,10 +1,10 @@
 import { createHash } from "node:crypto";
-import { GoogleGenAI } from "@google/genai";
 import { EngineFacts, toPlanAirQuality } from "@/domain/engine";
 import { indexByHour } from "@/domain/hourly";
 import { effectiveAQI } from "@/domain/protection";
 import { bestExerciseStartHour } from "@/domain/windows";
 import {
+  AdvisoryAudience,
   CurrentAirQuality,
   DailyPlanResponse,
   HourlyAirQuality,
@@ -20,136 +20,20 @@ import {
   SYSTEM_INSTRUCTION,
 } from "./prompts";
 import { GEMINI_PLAN_RESPONSE_SCHEMA, GeminiPlanOutput, GeminiPlanOutputSchema } from "./schemas";
+import { GeminiUnavailableError } from "./gemini-errors";
+import { getClient, getModelName, runWithFallback } from "./model-chain";
 
 const REQUEST_TIMEOUT_MS = 45_000;
 const PLAN_CACHE_TTL_MS = 15 * 60 * 1000;
 const TEXT_CACHE_TTL_MS = 15 * 60 * 1000;
 const MAX_TEXT_LENGTH = 2500;
 
-export type GeminiFailureReason =
-  | "missing_key"
-  | "invalid_key"
-  | "quota"
-  | "model_not_found"
-  | "timeout"
-  | "network"
-  | "service_error"
-  | "bad_output"
-  | "unknown";
+export { classifyGeminiError, GeminiUnavailableError } from "./gemini-errors";
+export type { GeminiFailureReason } from "./gemini-errors";
 
-/**
- * Thrown whenever Gemini cannot write the text. Nothing falls back to built-in wording: the caller
- * shows the page an "AI unavailable" error, and the server log names the reason.
- */
-export class GeminiUnavailableError extends Error {
-  constructor(
-    public readonly reason: GeminiFailureReason,
-    detail = ""
-  ) {
-    super(detail ? `${reason}: ${detail}` : reason);
-    this.name = "GeminiUnavailableError";
-  }
-}
-
-/** Map an SDK or network error to one short reason. Never returns the message itself. */
-export function classifyGeminiError(err: unknown): GeminiFailureReason {
-  if (err instanceof GeminiUnavailableError) return err.reason;
-  if (err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError")) {
-    return "timeout";
-  }
-  const status = (err as { status?: unknown })?.status;
-  const code = typeof status === "number" ? status : undefined;
-  const message = err instanceof Error ? err.message : "";
-  if (code === 401 || code === 403 || /API key not valid|API_KEY_INVALID/i.test(message)) {
-    return "invalid_key";
-  }
-  if (code === 429 || /RESOURCE_EXHAUSTED|quota/i.test(message)) return "quota";
-  if (code === 404) return "model_not_found";
-  if (code !== undefined && code >= 500) return "service_error";
-  if (/fetch failed|ENOTFOUND|EAI_AGAIN|ECONNRESET|ETIMEDOUT/i.test(message)) return "network";
-  if (err instanceof SyntaxError) return "bad_output";
-  return "unknown";
-}
-
-function getClient(): GoogleGenAI {
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
-  if (!apiKey || apiKey === "your_gemini_api_key_here") {
-    throw new GeminiUnavailableError("missing_key", "GEMINI_API_KEY is not set");
-  }
-  return new GoogleGenAI({ apiKey });
-}
-
-/** Attempts per model for transient errors (503, "high demand") before moving on to the next model. */
-const TRANSIENT_RETRIES = 2;
-/** Stop starting new attempts after this long, so one request cannot hang for minutes. */
-const TOTAL_BUDGET_MS = 60_000;
-const DEFAULT_MODELS = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-3.5-flash-lite"];
-let retryDelaysMs = [1_000, 2_000];
-
-/** Tests only: replaces the real waits between retries. */
-export function setGeminiRetryDelaysForTests(delays: number[]): void {
-  retryDelaysMs = delays;
-}
-
-/** Model 1, then model 2 and model 3. Set GEMINI_MODEL, GEMINI_MODEL_2 and GEMINI_MODEL_3 to change them. */
-function getModelChain(): string[] {
-  const configured = [
-    process.env.GEMINI_MODEL,
-    process.env.GEMINI_MODEL_2,
-    process.env.GEMINI_MODEL_3,
-  ];
-  const chain = configured.map((value, i) => value?.trim() || DEFAULT_MODELS[i]);
-  return [...new Set(chain)];
-}
-
-function getModelName(): string {
-  return getModelChain()[0];
-}
-
-function isTransient(err: unknown): boolean {
-  if (classifyGeminiError(err) === "service_error") return true;
-  return err instanceof Error && /high demand|UNAVAILABLE|overloaded/i.test(err.message);
-}
-
-const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-
-/**
- * Run one request against model 1. A transient failure is retried on the same model. Any other
- * failure, or a model that stays busy, moves on to model 2 and then model 3. A bad key or a missing
- * key stops at once, because every model would fail the same way.
- */
-async function runWithFallback<T>(label: string, run: (model: string) => Promise<T>): Promise<T> {
-  const started = Date.now();
-  let lastError: unknown = new GeminiUnavailableError("unknown", "no model was tried");
-
-  for (const model of getModelChain()) {
-    for (let attempt = 0; attempt <= TRANSIENT_RETRIES; attempt++) {
-      if (Date.now() - started > TOTAL_BUDGET_MS) throw logFailure(label, lastError);
-      try {
-        return await run(model);
-      } catch (err) {
-        lastError = err;
-        const reason = classifyGeminiError(err);
-        console.error(`[gemini] ${label} model=${model} attempt=${attempt + 1} failed (${reason})`);
-        if (reason === "invalid_key" || reason === "missing_key") throw logFailure(label, err);
-        if (!isTransient(err) || attempt === TRANSIENT_RETRIES) break;
-        await sleep(retryDelaysMs[attempt] ?? 0);
-      }
-    }
-  }
-  throw logFailure(label, lastError);
-}
-
+/** A short, stable fingerprint of a JSON value, used in cache keys. */
 function hash(value: unknown): string {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex").slice(0, 32);
-}
-
-/** Log the reason and a short message. Never log prompts, keys or household details. */
-function logFailure(label: string, err: unknown): GeminiUnavailableError {
-  const reason = classifyGeminiError(err);
-  const detail = err instanceof Error ? err.message.slice(0, 200) : "";
-  console.error(`[gemini] ${label} failed (${reason})${detail ? `: ${detail}` : ""}`);
-  return new GeminiUnavailableError(reason, detail);
 }
 
 /**
@@ -201,7 +85,6 @@ export function finalizeGeminiPlan(
     });
 
   return {
-    isFallback: false,
     city: profile.city,
     currentAQI: airQuality.aqi,
     currentCategory: airQuality.category,
@@ -298,6 +181,7 @@ async function generateText(prompt: string, cacheKeyParts: unknown): Promise<str
   return clipped;
 }
 
+/** Explain a what-if result in plain words. Throws GeminiUnavailableError when no model answers. */
 export async function generateWhatIfAnswerWithGemini(args: {
   question: string;
   profile: HouseholdProfile;
@@ -315,11 +199,12 @@ export async function generateWhatIfAnswerWithGemini(args: {
   });
 }
 
+/** Write a short, shareable advisory. Throws GeminiUnavailableError when no model answers. */
 export async function generateCommunityAdvisoryWithGemini(args: {
   city: string;
   aqi: number;
   category: string;
-  audience: "housing_society" | "school" | "general_public";
+  audience: AdvisoryAudience;
   language: SupportedLanguageCode;
   cleanestWindow?: string;
 }): Promise<string> {

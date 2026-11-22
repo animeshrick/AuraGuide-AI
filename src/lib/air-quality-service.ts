@@ -1,7 +1,7 @@
 import { CurrentAirQuality } from "@/domain/types";
 import { buildModelledAirQuality, fetchAirQuality, geocodeCity } from "./open-meteo";
 
-export type AirQualityLookup =
+type AirQualityLookup =
   { ok: true; airQuality: CurrentAirQuality } | { ok: false; reason: "city_not_found" };
 
 /**

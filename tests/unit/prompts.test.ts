@@ -100,3 +100,104 @@ describe("languageInstruction", () => {
     expect(languageInstruction("en")).toMatch(/English/i);
   });
 });
+
+describe("buildPlanPrompt details", () => {
+  const airQuality = makeAirQuality();
+
+  it("states the home settings and marks a member who smokes", () => {
+    const profile = makeProfile({
+      usesIncenseOrCoils: false,
+      hasAirPurifier: true,
+      members: [makeMember({ id: "s", smokes: true })],
+    });
+    const prompt = buildPlanPrompt(profile, airQuality, computeEngineFacts(profile, airQuality));
+    expect(prompt).toContain("Incense or mosquito coils used indoors: no");
+    expect(prompt).toContain("Air purifier at home: yes");
+    expect(prompt).toContain("smokes or vapes");
+  });
+
+  it("says so when there are no clean windows and no mode swaps", () => {
+    const profile = makeProfile({ members: [makeMember({ commuteMode: "work_from_home" })] });
+    const facts = computeEngineFacts(profile, airQuality);
+    const prompt = buildPlanPrompt(profile, airQuality, {
+      ...facts,
+      safeWindows: [],
+      emissionImpact: { ...facts.emissionImpact, modeSwaps: [] },
+    });
+    expect(prompt).toContain("- none available");
+    expect(prompt).toContain("Swaps: none.");
+  });
+
+  it("defaults to English when the profile has no language", () => {
+    const profile = { ...makeProfile(), language: undefined };
+    const prompt = buildPlanPrompt(profile, airQuality, computeEngineFacts(profile, airQuality));
+    expect(prompt).toContain(languageInstruction("en"));
+  });
+});
+
+describe("buildWhatIfPrompt wording", () => {
+  const profile = makeProfile();
+  const base = runWhatIf(profile, makeHourly(6), "What if I take the metro instead?", "m1");
+  if (!base.matched) throw new Error("fixture must match");
+  const prompt = (savedEmissionsKg: number, exposureChangePercentage: number) =>
+    buildWhatIfPrompt({
+      question: "What if?",
+      profile,
+      outcome: { ...base, savedEmissionsKg, exposureChangePercentage },
+      aqi: 250,
+      category: "Poor",
+      language: "en",
+    });
+
+  it.each([
+    [1.5, -20, "saves 1.5 kg CO2e per day", "20% LESS PM2.5 inhaled"],
+    [-0.8, 15, "adds 0.8 kg CO2e per day", "15% MORE PM2.5 inhaled"],
+    [0, 0, "does not change emissions", "no change in PM2.5 inhaled"],
+  ])("describes saved %s kg and a %s%% change", (saved, change, fumes, air) => {
+    const text = prompt(saved, change);
+    expect(text).toContain(fumes);
+    expect(text).toContain(air);
+  });
+
+  it("falls back to the outcome's name when the member is not in the profile", () => {
+    const text = buildWhatIfPrompt({
+      question: "What if?",
+      profile: makeProfile({ members: [makeMember({ id: "other", name: "Other" })] }),
+      outcome: { ...base, memberName: "Asha" },
+      aqi: 250,
+      category: "Poor",
+      language: "en",
+    });
+    expect(text).toContain("Asha");
+  });
+});
+
+describe("buildAdvisoryPrompt audiences", () => {
+  it.each([
+    ["school", "parents, teachers and school administration"],
+    ["housing_society", "housing society (RWA)"],
+    ["general_public", "residents of the neighbourhood"],
+  ] as const)("writes for %s", (audience, label) => {
+    const text = buildAdvisoryPrompt({
+      city: "Patna",
+      aqi: 300,
+      category: "Poor",
+      audience,
+      language: "en",
+    });
+    expect(text).toContain(label);
+    expect(text).not.toContain("Cleanest time of day");
+  });
+
+  it("includes the cleanest window when there is one", () => {
+    const text = buildAdvisoryPrompt({
+      city: "Patna",
+      aqi: 300,
+      category: "Poor",
+      audience: "school",
+      language: "en",
+      cleanestWindow: "13:00 - 15:00",
+    });
+    expect(text).toContain("Cleanest time of day for outdoor tasks: 13:00 - 15:00");
+  });
+});

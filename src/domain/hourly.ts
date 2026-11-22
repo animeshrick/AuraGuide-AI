@@ -12,19 +12,13 @@ export function indexByHour(hourly: readonly HourlyAirQuality[]): Map<number, Ho
   return map;
 }
 
-export function aqiAtHour(
-  hourly: readonly HourlyAirQuality[],
-  hour: number,
-  fallback: number
-): number {
-  return indexByHour(hourly).get(hour)?.aqi ?? fallback;
-}
-
+/** Average of a list, or 0 for an empty list. */
 export function meanOf(values: readonly number[]): number {
   if (values.length === 0) return 0;
   return values.reduce((sum, v) => sum + v, 0) / values.length;
 }
 
+/** Rounded average AQI of some hours. */
 export function averageAQI(hours: readonly { aqi: number }[]): number {
   return Math.round(meanOf(hours.map((h) => h.aqi)));
 }

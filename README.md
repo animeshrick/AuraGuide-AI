@@ -4,7 +4,7 @@ A GenAI assistant that helps families and communities get through severe winter 
 
 Built for PromptWars Virtual, Challenge 6: Urban Air Quality Assistant (Hack2skill and Google for Developers).
 
-- Live app: https://auraguide-ai.challenge6.workers.dev/
+- Live app: https://aura-guide-ai.vercel.app/
 - Demo video: https://www.loom.com/share/f186e4353f2c4f0097723f7946a573ec
 - Build post: https://www.linkedin.com/feed/update/urn:li:activity:7529590080232042496/
 
@@ -34,7 +34,7 @@ On a bad smog day people know the air is unhealthy, but they do not know what to
 | Community mode | Generates a shareable daily advisory for a housing society or school |
 | Languages | English, Hindi and Bengali, with wording adapted for elders and children |
 | Demo households | One tap loads a sample family so the full flow can be seen in seconds |
-| Fallback plan | A rule-based plan is shown if the AI service or the data source is unavailable |
+| Model fallback chain | A busy Gemini model is retried, then the next model in the chain is used. If no model answers, the app says so clearly instead of guessing |
 
 ## How GenAI is used
 
@@ -49,7 +49,7 @@ Gemini does the reasoning and the language. The code does the arithmetic.
 | Translating and adapting tone | Gemini |
 | Writing the community advisory | Gemini |
 
-Gemini returns structured JSON. The response is validated against a schema before anything is shown. If validation fails, the app falls back to the rule-based plan.
+Gemini returns structured JSON. The response is validated against a schema before anything is shown, and every number in it is replaced with the engine's value. If Gemini cannot answer, the API returns a clear "AI unavailable" error and writes nothing.
 
 ## Architecture
 
@@ -59,8 +59,8 @@ Browser (Next.js UI)
    |  POST /api/plan, /api/whatif, /api/advisory
    v
 Next.js API routes (server)
-   |-- validate input (Zod)
    |-- rate limit per client
+   |-- validate input (Zod)
    |-- Open-Meteo Geocoding      -> coordinates
    |-- Open-Meteo Air Quality    -> current + hourly forecast (cached)
    |-- Impact engine             -> exposure, emissions, AQI category
@@ -80,7 +80,7 @@ There is no database and no login. The household profile stays in the browser se
 - Vitest for unit tests, Playwright with axe for end-to-end and accessibility tests
 - ESLint and Prettier
 - GitHub Actions for lint, type check and tests
-- Deployed on `<Google Cloud Run / Vercel>`
+- Deployed on Vercel
 
 ## Getting started
 
@@ -96,13 +96,22 @@ npm run dev
 
 Open http://localhost:3000.
 
+### Deploying to Vercel
+
+1. Import the GitHub repository in Vercel. It detects Next.js, so the default build settings work.
+2. In Project Settings, Environment Variables, add `GEMINI_API_KEY` (and any optional variables above).
+3. Deploy. The API routes run as Node.js functions, and the key stays on the server.
+
 ### Environment variables
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `GEMINI_API_KEY` | Yes | Server-side key from Google AI Studio |
-| `GEMINI_MODEL` | Yes | Model name to call |
-| `RATE_LIMIT_PER_MINUTE` | No | Requests allowed per client per minute |
+| `GEMINI_MODEL` | No | First model to call (default `gemini-3.6-flash`) |
+| `GEMINI_MODEL_2` | No | Second model, used when the first is busy (default `gemini-2.5-flash`) |
+| `GEMINI_MODEL_3` | No | Third model (default `gemini-3.5-flash-lite`) |
+| `GEMINI_RETRY_BASE_MS` | No | Wait before the first retry, doubled for each retry (default 1000) |
+| `RATE_LIMIT_PER_MINUTE` | No | Requests allowed per client per minute (default 30) |
 
 Only `.env.example` is committed. Real keys are never in the repository.
 
@@ -114,6 +123,7 @@ Only `.env.example` is committed. Real keys are never in the repository.
 | `npm run build` | Production build |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript check |
+| `npm run format:check` | Prettier check |
 | `npm test` | Unit tests with coverage |
 | `npm run test:e2e` | Playwright and axe tests |
 
@@ -121,11 +131,12 @@ Only `.env.example` is committed. Real keys are never in the repository.
 
 ```
 src/
-  app/            pages and API routes
-  components/     UI components
-  domain/         impact engine: AQI category, exposure, emissions, safe windows
-  ai/             prompts, Gemini client, response schemas
-  lib/            air quality client, cache, rate limiter, validation
+  app/            page, layout and the three API routes
+  components/     UI components; household/, whatif/, advisory/ and outing/ hold the parts of larger panels
+  hooks/          page state and request handling (usePlanSession, useLatestRequest)
+  domain/         impact engine: AQI, exposure, emissions, safe windows, what-if, outings, plants, shared input limits
+  ai/             prompts, Gemini client, model fallback chain, response schemas
+  lib/            air quality client, API route helper, cache, rate limiter, validation
   i18n/           English, Hindi, Bengali strings
 tests/
   unit/           engine, validation and schema tests
@@ -134,14 +145,15 @@ tests/
 
 ## Evaluation criteria coverage
 
-| Criterion | How it is addressed | Where |
+| Criterion | How it is addressed | Evidence |
 | --- | --- | --- |
-| Code quality | Strict TypeScript, small pure functions, lint and format checks in CI | `src/domain`, `.github/workflows` |
-| Security | Server-only API key, schema validation, rate limiting, security headers, user text passed to the model as untrusted data, model output never rendered as HTML | `src/lib`, `src/ai`, `SECURITY.md` |
-| Efficiency | Cached air quality and AI responses, one model call per plan, structured output, no heavy client bundle | `src/lib/cache.ts`, `src/ai` |
-| Testing | Unit tests on every engine function and edge case, end-to-end tests on the main flows. Coverage: `<ADD %>` | `tests/` |
-| Accessibility | Semantic HTML, keyboard-only flow, visible focus, AQI levels shown with text and not colour alone, axe tests with zero violations | `src/components`, `tests/e2e` |
-| Problem statement alignment | Low-emission routines, indoor air fixes, sustainable alternatives, location and lifestyle personalisation, and the impact of each choice explained | Whole app |
+| Code quality | Strict TypeScript with no `any`, zero ESLint warnings, Prettier, small single-purpose files, one shared route helper for all API routes, shared input limits for the form and the server, doc comments on every exported function and component | `src/lib/api-route.ts`, `src/domain/limits.ts`, `src/components/household/`, `.github/workflows/ci.yml` |
+| Security | Server-only API key, Zod validation on every route, 32 KB body limit, rate limiting, CSP and other security headers, user text passed to the model as untrusted data, model output never rendered as HTML | `src/lib/http.ts`, `src/ai/sanitize.ts`, `next.config.mjs`, `SECURITY.md` |
+| Efficiency | Air quality and AI responses cached, one model call per plan, structured JSON output, retries with a time budget, no heavy client libraries | `src/lib/cache.ts`, `src/ai/model-chain.ts` |
+| Testing | 490+ unit and component tests (about 98% statement and 92% branch coverage; CI fails below 95% and 88%), plus 37 Playwright end-to-end and accessibility tests | `tests/unit`, `tests/e2e`, `vitest.config.mts` |
+| Accessibility | Semantic HTML, skip link, keyboard-only flow, visible focus, AQI shown with text and not colour alone, three languages, axe checks in unit and end-to-end tests | `src/components`, `tests/unit/helpers/axe.ts`, `tests/e2e` |
+| Problem statement alignment | Personal hour-by-hour plan from live AQI, safer time windows, low-emission travel swaps, indoor air fixes, air-cleaning plants, going-out advice, what-if questions and a community advisory, with the impact of every choice in numbers | `src/domain`, `src/components/PlanResults.tsx` |
+| Google services | Gemini API through the official `@google/genai` SDK, with structured output and a three-model fallback chain | `src/ai/gemini.ts`, `src/ai/model-chain.ts` |
 
 ## Data and method notes
 

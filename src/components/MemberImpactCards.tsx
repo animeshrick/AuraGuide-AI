@@ -10,6 +10,7 @@ interface MemberImpactCardsProps {
   dict: Dictionary;
 }
 
+/** One card per member: exposure on a normal day, on the optimised day, and what changed. */
 export const MemberImpactCards: React.FC<MemberImpactCardsProps> = ({ impacts, dict }) => {
   const headingId = useId();
   if (impacts.length === 0) return null;

@@ -2,6 +2,8 @@
   "name": "auraguide-ai",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
+  "description": "Personal smog-day plans for households, from live air quality and Gemini.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,10 +14,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
-    "test:e2e": "playwright test",
-    "cf:build": "opennextjs-cloudflare build",
-    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@google/genai": "^3.6.1",
@@ -30,7 +29,6 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.10.1",
     "@eslint/eslintrc": "^3.3.7",
-    "@opennextjs/cloudflare": "^1.20.18",
     "@playwright/test": "^1.50.1",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
@@ -48,8 +46,7 @@
     "prettier": "^3.5.1",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.3",
-    "vitest": "^4.1.12",
-    "wrangler": "^4.165.0"
+    "vitest": "^4.1.12"
   },
   "engines": {
     "node": ">=20.19.0"

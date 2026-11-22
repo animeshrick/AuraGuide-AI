@@ -3,6 +3,7 @@ interface CacheEntry<T> {
   expiresAt: number;
 }
 
+/** A small in-memory cache with a time limit per entry and a size limit. */
 export class MemoryCache {
   private cache = new Map<string, CacheEntry<unknown>>();
 

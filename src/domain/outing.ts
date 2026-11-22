@@ -64,7 +64,7 @@ export function outingModeFor(commute: CommuteMode): OutingMode {
   }
 }
 
-export interface OutingHour {
+interface OutingHour {
   hour: number;
   aqi: number;
   category: AQICategory;

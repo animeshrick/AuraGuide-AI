@@ -13,6 +13,7 @@ function resolveLimit(limitPerMinute?: number): number {
   return Number.isFinite(fromEnv) && fromEnv > 0 ? fromEnv : DEFAULT_LIMIT_PER_MINUTE;
 }
 
+/** Count one request for this caller in a fixed one-minute window. */
 export function checkRateLimit(
   identifier: string,
   limitPerMinute?: number

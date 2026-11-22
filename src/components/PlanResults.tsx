@@ -26,6 +26,7 @@ interface PlanResultsProps {
   headingRef: React.Ref<HTMLHeadingElement>;
 }
 
+/** Every section of a finished plan, in reading order. */
 export const PlanResults: React.FC<PlanResultsProps> = ({
   plan,
   profile,
@@ -35,8 +36,6 @@ export const PlanResults: React.FC<PlanResultsProps> = ({
   headingRef,
 }) => {
   const showModelledNotice = plan.airQuality.source === "modelled";
-  const showFallbackNotice = plan.isFallback;
-  const showEnglishOnlyNotice = plan.isFallback && language !== "en";
 
   return (
     <div className="space-y-6">
@@ -48,16 +47,10 @@ export const PlanResults: React.FC<PlanResultsProps> = ({
         {formatMessage(dict.results.heading, { city: plan.city })}
       </h1>
 
-      {(showModelledNotice || showFallbackNotice || isUpdating) && (
+      {(showModelledNotice || isUpdating) && (
         <div className="space-y-3">
           {showModelledNotice && (
             <StatusBanner tone="warning">{dict.banners.modelled}</StatusBanner>
-          )}
-          {showFallbackNotice && (
-            <StatusBanner tone="info">{dict.banners.fallbackPlan}</StatusBanner>
-          )}
-          {showEnglishOnlyNotice && (
-            <StatusBanner tone="info">{dict.banners.englishOnly}</StatusBanner>
           )}
           {isUpdating && <StatusBanner tone="info">{dict.banners.updatingLanguage}</StatusBanner>}
         </div>

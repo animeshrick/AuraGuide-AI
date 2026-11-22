@@ -1,8 +1,12 @@
 import { z } from "zod";
+import { LIMITS } from "@/domain/limits";
+import { ADVISORY_AUDIENCES } from "@/domain/types";
 
-export const LanguageSchema = z.enum(["en", "hi", "bn"]);
+/** Languages the app writes in. */
+const LanguageSchema = z.enum(["en", "hi", "bn"]);
 
-export const HealthSensitivitySchema = z.enum([
+/** Health conditions that tighten a member's safe-air thresholds. */
+const HealthSensitivitySchema = z.enum([
   "asthma",
   "pregnant",
   "infant",
@@ -12,6 +16,7 @@ export const HealthSensitivitySchema = z.enum([
   "none",
 ]);
 
+/** How a member spends the working day: a way of travelling, or at home. */
 export const CommuteModeSchema = z.enum([
   "walk",
   "bicycle",
@@ -25,36 +30,39 @@ export const CommuteModeSchema = z.enum([
   "homemaker",
 ]);
 
-export const CookingFuelSchema = z.enum(["lpg", "biomass", "electric"]);
+/** The household's main cooking fuel. */
+const CookingFuelSchema = z.enum(["lpg", "biomass", "electric"]);
 
-export const OutdoorActivitySchema = z.object({
-  description: z.string().trim().min(1).max(100),
+/** A regular outdoor activity: what, when and for how long. */
+const OutdoorActivitySchema = z.object({
+  description: z.string().trim().min(1).max(LIMITS.activityDescriptionMaxLength),
   preferredHour: z.number().int().min(0).max(23),
-  durationMinutes: z.number().int().min(5).max(360),
+  durationMinutes: z.number().int().min(LIMITS.minActivityMinutes).max(LIMITS.maxActivityMinutes),
 });
 
-export const HouseholdMemberSchema = z.object({
+/** One household member as sent by the browser. */
+const HouseholdMemberSchema = z.object({
   id: z.string().min(1).max(64),
-  name: z.string().trim().min(1).max(50),
-  age: z.number().int().min(0).max(120),
+  name: z.string().trim().min(1).max(LIMITS.memberNameMaxLength),
+  age: z.number().int().min(0).max(LIMITS.maxAge),
   sensitivities: z.array(HealthSensitivitySchema).max(7),
   smokes: z.boolean().optional(),
   commuteMode: CommuteModeSchema,
-  commuteDistanceKm: z.number().min(0).max(200),
-  commuteTimeMinutes: z.number().min(0).max(300),
-  outdoorActivities: z.array(OutdoorActivitySchema).max(5).default([]),
+  commuteDistanceKm: z.number().min(0).max(LIMITS.maxCommuteDistanceKm),
+  commuteTimeMinutes: z.number().min(0).max(LIMITS.maxCommuteMinutes),
+  outdoorActivities: z.array(OutdoorActivitySchema).max(LIMITS.maxActivitiesPerMember).default([]),
 });
 
 export const HouseholdProfileSchema = z
   .object({
-    city: z.string().trim().min(2).max(100),
+    city: z.string().trim().min(LIMITS.cityMinLength).max(LIMITS.cityMaxLength),
     coordinates: z
       .object({
         latitude: z.number().min(-90).max(90),
         longitude: z.number().min(-180).max(180),
       })
       .optional(),
-    members: z.array(HouseholdMemberSchema).min(1).max(10),
+    members: z.array(HouseholdMemberSchema).min(1).max(LIMITS.maxMembers),
     cookingFuel: CookingFuelSchema,
     usesIncenseOrCoils: z.boolean(),
     hasAirPurifier: z.boolean(),
@@ -65,7 +73,8 @@ export const HouseholdProfileSchema = z
     path: ["members"],
   });
 
-export const AQICategorySchema = z.enum([
+/** The six Indian National AQI categories. */
+const AQICategorySchema = z.enum([
   "Good",
   "Satisfactory",
   "Moderate",
@@ -74,7 +83,8 @@ export const AQICategorySchema = z.enum([
   "Severe",
 ]);
 
-export const ScheduleActionTypeSchema = z.enum([
+/** The kinds of change a plan can suggest. */
+const ScheduleActionTypeSchema = z.enum([
   "schedule_shift",
   "mode_swap",
   "indoor_protection",
@@ -90,7 +100,8 @@ const HourlyAirQualitySchema = z.object({
   category: AQICategorySchema,
 });
 
-export const SafeWindowSchema = z.object({
+/** A clean time window for one kind of activity. */
+const SafeWindowSchema = z.object({
   activity: z.enum(["school_run", "exercise", "ventilation", "general_outdoor"]),
   startHour: z.number().int().min(0).max(23),
   endHour: z.number().int().min(1).max(24),
@@ -99,7 +110,8 @@ export const SafeWindowSchema = z.object({
   recommendation: z.string(),
 });
 
-export const ScheduleItemSchema = z.object({
+/** One row of the before-and-after day. */
+const ScheduleItemSchema = z.object({
   hour: z.number().int().min(0).max(23),
   timeLabel: z.string(),
   normalActivity: z.string(),
@@ -111,7 +123,8 @@ export const ScheduleItemSchema = z.object({
   actionType: ScheduleActionTypeSchema,
 });
 
-export const MemberExposureImpactSchema = z.object({
+/** One member's exposure on a normal and an optimised day. */
+const MemberExposureImpactSchema = z.object({
   memberId: z.string(),
   memberName: z.string(),
   baselineExposureDose: z.number(),
@@ -120,7 +133,8 @@ export const MemberExposureImpactSchema = z.object({
   keyChanges: z.array(z.string()),
 });
 
-export const EmissionImpactSchema = z.object({
+/** Commute emissions before and after the suggested swaps. */
+const EmissionImpactSchema = z.object({
   baselineEmissionsKg: z.number(),
   optimizedEmissionsKg: z.number(),
   savedEmissionsKg: z.number(),
@@ -133,16 +147,16 @@ export const EmissionImpactSchema = z.object({
   ),
 });
 
-export const IndoorAirAdviceSchema = z.object({
+/** Indoor air advice in the finished plan. */
+const IndoorAirAdviceSchema = z.object({
   cookingAdvice: z.string().max(600),
   ventilationWindow: z.string().max(400),
   purifierStrategy: z.string().max(500),
   hazardWarnings: z.array(z.string().max(300)).max(6),
 });
 
-/** The plan returned to the browser. Used to check that both plan paths keep the same shape. */
+/** The plan returned to the browser. Tests use it to check the response shape. */
 export const DailyPlanResponseSchema = z.object({
-  isFallback: z.boolean(),
   city: z.string(),
   currentAQI: z.number(),
   currentCategory: AQICategorySchema,
@@ -276,17 +290,19 @@ export const GEMINI_PLAN_RESPONSE_SCHEMA = {
   required: ["summary", "safeWindowTips", "schedule", "indoorAir", "communityTip", "memberChanges"],
 } as const;
 
+/** Body of POST /api/whatif. */
 export const WhatIfRequestSchema = z.object({
   profile: HouseholdProfileSchema,
-  question: z.string().trim().min(3).max(300),
+  question: z.string().trim().min(LIMITS.questionMinLength).max(LIMITS.questionMaxLength),
   memberId: z.string().min(1).max(64).optional(),
   /** A travel option the person tapped. When present it is used instead of reading the question. */
   toMode: CommuteModeSchema.optional(),
   language: LanguageSchema.default("en"),
 });
 
+/** Body of POST /api/advisory. */
 export const AdvisoryRequestSchema = z.object({
-  city: z.string().trim().min(2).max(100),
-  audience: z.enum(["housing_society", "school", "general_public"]),
+  city: z.string().trim().min(LIMITS.cityMinLength).max(LIMITS.cityMaxLength),
+  audience: z.enum(ADVISORY_AUDIENCES),
   language: LanguageSchema.default("en"),
 });

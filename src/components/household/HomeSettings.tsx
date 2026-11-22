@@ -1,0 +1,109 @@
+import React from "react";
+import { MapPin } from "lucide-react";
+import { LIMITS } from "@/domain/limits";
+import type { CookingFuel } from "@/domain/types";
+import type { Dictionary } from "@/i18n";
+import { CheckboxCard } from "./CheckboxCard";
+import { INPUT_CLASS, LABEL_CLASS } from "./fieldStyles";
+
+interface HomeSettingsProps {
+  uid: string;
+  dict: Dictionary;
+  city: string;
+  cookingFuel: CookingFuel;
+  usesIncenseOrCoils: boolean;
+  hasAirPurifier: boolean;
+  onCityChange: (city: string) => void;
+  onCookingFuelChange: (fuel: CookingFuel) => void;
+  onIncenseChange: (value: boolean) => void;
+  onPurifierChange: (value: boolean) => void;
+}
+
+/** The household-wide settings: city, cooking fuel, incense and purifier. */
+export const HomeSettings: React.FC<HomeSettingsProps> = ({
+  uid,
+  dict,
+  city,
+  cookingFuel,
+  usesIncenseOrCoils,
+  hasAirPurifier,
+  onCityChange,
+  onCookingFuelChange,
+  onIncenseChange,
+  onPurifierChange,
+}) => {
+  const headingId = `${uid}-baseline`;
+  const cityId = `${uid}-city`;
+  const fuelId = `${uid}-fuel`;
+
+  return (
+    <section
+      aria-labelledby={headingId}
+      className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6"
+    >
+      <h2 id={headingId} className="text-lg font-bold text-slate-900 flex items-center gap-2">
+        <MapPin className="w-5 h-5 text-sky-700" aria-hidden="true" />
+        {dict.form.baselineHeading}
+      </h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label htmlFor={cityId} className={LABEL_CLASS}>
+            {dict.form.city}
+          </label>
+          <input
+            id={cityId}
+            type="text"
+            required
+            minLength={LIMITS.cityMinLength}
+            maxLength={LIMITS.cityMaxLength}
+            autoComplete="address-level2"
+            value={city}
+            onChange={(e) => onCityChange(e.target.value)}
+            placeholder={dict.form.cityPlaceholder}
+            aria-describedby={`${cityId}-hint`}
+            className={`${INPUT_CLASS} px-4 py-2.5 rounded-xl`}
+          />
+          <p id={`${cityId}-hint`} className="text-xs text-slate-600 mt-1">
+            {dict.form.cityHint}
+          </p>
+        </div>
+
+        <div>
+          <label htmlFor={fuelId} className={LABEL_CLASS}>
+            {dict.form.cookingFuel}
+          </label>
+          <select
+            id={fuelId}
+            value={cookingFuel}
+            onChange={(e) => onCookingFuelChange(e.target.value as CookingFuel)}
+            aria-describedby={`${fuelId}-hint`}
+            className={`${INPUT_CLASS} px-4 py-2.5 rounded-xl`}
+          >
+            <option value="lpg">{dict.form.cookingLPG}</option>
+            <option value="electric">{dict.form.cookingElectric}</option>
+            <option value="biomass">{dict.form.cookingBiomass}</option>
+          </select>
+          <p id={`${fuelId}-hint`} className="text-xs text-slate-600 mt-1">
+            {dict.form.cookingHint}
+          </p>
+        </div>
+      </div>
+
+      <div className="pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <CheckboxCard
+          title={dict.form.incenseCoil}
+          hint={dict.form.incenseHint}
+          checked={usesIncenseOrCoils}
+          onChange={onIncenseChange}
+        />
+        <CheckboxCard
+          title={dict.form.purifier}
+          hint={dict.form.purifierHint}
+          checked={hasAirPurifier}
+          onChange={onPurifierChange}
+        />
+      </div>
+    </section>
+  );
+};

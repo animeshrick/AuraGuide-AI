@@ -9,6 +9,7 @@ interface IndoorAirPanelProps {
   dict: Dictionary;
 }
 
+/** Advice for cleaner air at home: cooking, airing, purifier use and hazards. */
 export const IndoorAirPanel: React.FC<IndoorAirPanelProps> = ({ advice, dict }) => {
   const headingId = useId();
 

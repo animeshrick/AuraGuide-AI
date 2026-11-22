@@ -24,6 +24,7 @@ export const viewport: Viewport = {
   themeColor: "#0369a1",
 };
 
+/** The HTML shell shared by every page. */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     // Browser extensions such as Dark Reader add attributes to these tags before React loads,

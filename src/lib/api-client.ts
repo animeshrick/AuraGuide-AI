@@ -1,4 +1,4 @@
-import type { AdvisoryAudience } from "@/domain/advisory";
+import type { AdvisoryAudience } from "@/domain/types";
 import type {
   AQICategory,
   CommuteMode,
@@ -18,6 +18,7 @@ export type ClientErrorCode =
   | "internal_error"
   | "network";
 
+/** An API failure with a code the page can show in the chosen language. */
 export class ApiClientError extends Error {
   constructor(
     public readonly code: ClientErrorCode,
@@ -75,6 +76,7 @@ async function postJson<T>(url: string, body: unknown, signal?: AbortSignal): Pr
   return data as T;
 }
 
+/** Ask the server for a plan for this household. */
 export function requestPlan(
   profile: HouseholdProfile,
   signal?: AbortSignal
@@ -82,19 +84,20 @@ export function requestPlan(
   return postJson<DailyPlanResponse>("/api/plan", profile, signal);
 }
 
-export interface WhatIfMatchedResult extends Extract<WhatIfOutcome, { matched: true }> {
+interface WhatIfMatchedResult extends Extract<WhatIfOutcome, { matched: true }> {
   question: string;
   currentAQI: number;
   explanation: string;
-  explanationSource: "gemini" | "rules";
+  explanationSource: "gemini";
 }
 
-export interface WhatIfUnmatchedResult extends Extract<WhatIfOutcome, { matched: false }> {
+interface WhatIfUnmatchedResult extends Extract<WhatIfOutcome, { matched: false }> {
   question: string;
 }
 
 export type WhatIfResult = WhatIfMatchedResult | WhatIfUnmatchedResult;
 
+/** Ask the server what changes if one member travels another way. */
 export function requestWhatIf(
   args: {
     profile: HouseholdProfile;
@@ -115,9 +118,10 @@ export interface AdvisoryResult {
   audience: AdvisoryAudience;
   dataSource: AirQualitySource;
   advisoryText: string;
-  advisorySource: "gemini" | "rules";
+  advisorySource: "gemini";
 }
 
+/** Ask the server for a community advisory. */
 export function requestAdvisory(
   args: { city: string; audience: AdvisoryAudience; language: SupportedLanguage },
   signal?: AbortSignal

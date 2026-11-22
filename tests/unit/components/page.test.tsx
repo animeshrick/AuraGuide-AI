@@ -3,11 +3,11 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import HomePage from "@/app/page";
-import { generateFallbackPlan } from "@/domain/rules-fallback";
 import type { DailyPlanResponse } from "@/domain/types";
 import { getDictionary } from "@/i18n";
 import { accessibilityProblems } from "../helpers/axe";
 import { makeAirQuality, makeProfile } from "../helpers/fixtures";
+import { makePlan } from "../helpers/plan";
 
 const en = getDictionary("en");
 const hi = getDictionary("hi");
@@ -20,7 +20,7 @@ function reply(body: unknown, status = 200) {
 }
 
 function planFor(city: string): DailyPlanResponse {
-  return generateFallbackPlan(makeProfile({ city }), makeAirQuality({ city }));
+  return makePlan(makeProfile({ city }), makeAirQuality({ city }));
 }
 
 function deferred<T>() {

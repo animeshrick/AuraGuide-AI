@@ -12,6 +12,7 @@ interface ImpactSummaryProps {
   dict: Dictionary;
 }
 
+/** The headline numbers: current AQI, exposure avoided and emissions saved. */
 export const ImpactSummary: React.FC<ImpactSummaryProps> = ({ plan, dict }) => {
   const headingId = useId();
   const summary = summarizePlan(plan);

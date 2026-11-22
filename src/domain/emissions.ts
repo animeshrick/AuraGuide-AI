@@ -9,10 +9,12 @@ export function dailyCommuteEmissionsKg(oneWayDistanceKm: number, mode: CommuteM
   return dailyKm * (EMISSION_FACTORS_KG_PER_KM[mode] || 0);
 }
 
+/** Round to two decimal places, the precision shown for kilograms. */
 export function roundKg(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
+/** The household's commute emissions on a normal day, in kg CO2e. */
 export function calculateBaselineEmissions(profile: HouseholdProfile): number {
   let totalKg = 0;
   for (const member of profile.members) {
@@ -21,6 +23,7 @@ export function calculateBaselineEmissions(profile: HouseholdProfile): number {
   return roundKg(totalKg);
 }
 
+/** A cleaner way to make the same trip, or the same mode when there is none. */
 export function recommendModeSwap(currentMode: CommuteMode): CommuteMode {
   switch (currentMode) {
     case "car_ice":
@@ -38,6 +41,7 @@ export function recommendModeSwap(currentMode: CommuteMode): CommuteMode {
   }
 }
 
+/** Emissions before and after each member makes the recommended swap. */
 export function calculateEmissionImpact(profile: HouseholdProfile): EmissionImpact {
   const baselineEmissionsKg = calculateBaselineEmissions(profile);
   let optimizedEmissionsKg = 0;
