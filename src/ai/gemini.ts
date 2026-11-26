@@ -1,16 +1,14 @@
 import { createHash } from "node:crypto";
-import { EngineFacts, toPlanAirQuality } from "@/domain/engine";
+import type { EngineFacts } from "@/domain/engine";
+import { toPlanAirQuality } from "@/domain/engine";
 import { indexByHour } from "@/domain/hourly";
 import { effectiveAQI } from "@/domain/protection";
 import { bestExerciseStartHour } from "@/domain/windows";
-import {
-  AdvisoryAudience,
+import type {
   CurrentAirQuality,
   DailyPlanResponse,
   HourlyAirQuality,
   HouseholdProfile,
-  SupportedLanguageCode,
-  WhatIfOutcome,
 } from "@/domain/types";
 import { aiPlanCache, aiTextCache } from "@/lib/cache";
 import {
@@ -19,14 +17,20 @@ import {
   buildWhatIfPrompt,
   SYSTEM_INSTRUCTION,
 } from "./prompts";
-import { GEMINI_PLAN_RESPONSE_SCHEMA, GeminiPlanOutput, GeminiPlanOutputSchema } from "./schemas";
+import type { AdvisoryPromptInput, WhatIfPromptInput } from "./prompts";
+import type { GeminiPlanOutput } from "./gemini-schema";
+import { GEMINI_PLAN_RESPONSE_SCHEMA, GeminiPlanOutputSchema } from "./gemini-schema";
 import { GeminiUnavailableError } from "./gemini-errors";
 import { getClient, getModelName, runWithFallback } from "./model-chain";
 
+/** Longest wait for one model call. */
 const REQUEST_TIMEOUT_MS = 45_000;
-const PLAN_CACHE_TTL_MS = 15 * 60 * 1000;
-const TEXT_CACHE_TTL_MS = 15 * 60 * 1000;
+/** How long a reply is reused for an identical request. */
+const REPLY_CACHE_TTL_MS = 15 * 60 * 1000;
+/** Longest what-if answer or advisory passed on to the browser, in characters. */
 const MAX_TEXT_LENGTH = 2500;
+/** Low enough for steady, factual wording; high enough that the text does not read as a template. */
+const TEMPERATURE = 0.4;
 
 export { classifyGeminiError, GeminiUnavailableError } from "./gemini-errors";
 export type { GeminiFailureReason } from "./gemini-errors";
@@ -48,16 +52,12 @@ export function planCacheKey(profile: HouseholdProfile, airQuality: CurrentAirQu
   })}`;
 }
 
-/**
- * Combine the model's words with the engine's numbers. Numbers the model might
- * have mentioned are never read. Hours and AQI figures come from the data.
- */
-export function finalizeGeminiPlan(
-  output: GeminiPlanOutput,
+/** The model's schedule in time order, with the AQI before and after each step taken from the data. */
+function buildSchedule(
+  items: GeminiPlanOutput["schedule"],
   profile: HouseholdProfile,
-  airQuality: CurrentAirQuality,
-  facts: EngineFacts
-): DailyPlanResponse {
+  airQuality: CurrentAirQuality
+): DailyPlanResponse["schedule"] {
   const byHour = indexByHour(airQuality.hourly);
   const currentEntry: HourlyAirQuality = airQuality.hourly[0] ?? {
     time: airQuality.updatedAt,
@@ -70,7 +70,7 @@ export function finalizeGeminiPlan(
   const shiftHour = bestExerciseStartHour(airQuality.hourly);
   const shiftedTo = shiftHour === null ? null : (byHour.get(shiftHour) ?? null);
 
-  const schedule = [...output.schedule]
+  return [...items]
     .sort((a, b) => a.hour - b.hour)
     .map((item) => {
       const outdoor = byHour.get(item.hour) ?? currentEntry;
@@ -83,7 +83,18 @@ export function finalizeGeminiPlan(
         }),
       };
     });
+}
 
+/**
+ * Combine the model's words with the engine's numbers. Numbers the model might
+ * have mentioned are never read. Hours and AQI figures come from the data.
+ */
+export function finalizeGeminiPlan(
+  output: GeminiPlanOutput,
+  profile: HouseholdProfile,
+  airQuality: CurrentAirQuality,
+  facts: EngineFacts
+): DailyPlanResponse {
   return {
     city: profile.city,
     currentAQI: airQuality.aqi,
@@ -99,11 +110,28 @@ export function finalizeGeminiPlan(
       return changes ? { ...impact, keyChanges: changes.changes } : impact;
     }),
     emissionImpact: facts.emissionImpact,
-    schedule,
+    schedule: buildSchedule(output.schedule, profile, airQuality),
     indoorAir: output.indoorAir,
     communityTip: output.communityTip,
     outlook: facts.outlook,
   };
+}
+
+/** Read the model's reply as a plan. Throws `bad_output` when it is not JSON or not the expected shape. */
+function parsePlanOutput(text: string): GeminiPlanOutput {
+  let json: unknown;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    throw new GeminiUnavailableError("bad_output", "reply was not JSON");
+  }
+
+  const parsed = GeminiPlanOutputSchema.safeParse(json);
+  if (!parsed.success) {
+    const paths = parsed.error.issues.slice(0, 3).map((i) => i.path.join("."));
+    throw new GeminiUnavailableError("bad_output", `fields: ${paths.join(", ")}`);
+  }
+  return parsed.data;
 }
 
 /** One model call per plan. Throws GeminiUnavailableError when the plan cannot be written. */
@@ -126,7 +154,7 @@ export async function generateOptimizedPlanWithGemini(
         systemInstruction: SYSTEM_INSTRUCTION,
         responseMimeType: "application/json",
         responseJsonSchema: GEMINI_PLAN_RESPONSE_SCHEMA,
-        temperature: 0.4,
+        temperature: TEMPERATURE,
         abortSignal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       },
     });
@@ -136,26 +164,13 @@ export async function generateOptimizedPlanWithGemini(
       const finish = response.candidates?.[0]?.finishReason ?? "unknown";
       throw new GeminiUnavailableError("bad_output", `no text, finish reason ${finish}`);
     }
-
-    let json: unknown;
-    try {
-      json = JSON.parse(text);
-    } catch {
-      throw new GeminiUnavailableError("bad_output", "reply was not JSON");
-    }
-
-    const parsed = GeminiPlanOutputSchema.safeParse(json);
-    if (!parsed.success) {
-      const paths = parsed.error.issues.slice(0, 3).map((i) => i.path.join("."));
-      throw new GeminiUnavailableError("bad_output", `fields: ${paths.join(", ")}`);
-    }
-
-    return finalizeGeminiPlan(parsed.data, profile, airQuality, facts);
+    return finalizeGeminiPlan(parsePlanOutput(text), profile, airQuality, facts);
   });
-  aiPlanCache.set(cacheKey, plan, PLAN_CACHE_TTL_MS);
+  aiPlanCache.set(cacheKey, plan, REPLY_CACHE_TTL_MS);
   return plan;
 }
 
+/** One model call for a short piece of plain text, cached by the facts the text depends on. */
 async function generateText(prompt: string, cacheKeyParts: unknown): Promise<string> {
   const client = getClient();
 
@@ -169,7 +184,7 @@ async function generateText(prompt: string, cacheKeyParts: unknown): Promise<str
       contents: prompt,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.4,
+        temperature: TEMPERATURE,
         abortSignal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       },
     });
@@ -178,19 +193,12 @@ async function generateText(prompt: string, cacheKeyParts: unknown): Promise<str
 
     return text.slice(0, MAX_TEXT_LENGTH);
   });
-  aiTextCache.set(cacheKey, clipped, TEXT_CACHE_TTL_MS);
+  aiTextCache.set(cacheKey, clipped, REPLY_CACHE_TTL_MS);
   return clipped;
 }
 
 /** Explain a what-if result in plain words. Throws GeminiUnavailableError when no model answers. */
-export async function generateWhatIfAnswerWithGemini(args: {
-  question: string;
-  profile: HouseholdProfile;
-  outcome: Extract<WhatIfOutcome, { matched: true }>;
-  aqi: number;
-  category: string;
-  language: SupportedLanguageCode;
-}): Promise<string> {
+export async function generateWhatIfAnswerWithGemini(args: WhatIfPromptInput): Promise<string> {
   return generateText(buildWhatIfPrompt(args), {
     kind: "whatif",
     question: args.question,
@@ -201,13 +209,8 @@ export async function generateWhatIfAnswerWithGemini(args: {
 }
 
 /** Write a short, shareable advisory. Throws GeminiUnavailableError when no model answers. */
-export async function generateCommunityAdvisoryWithGemini(args: {
-  city: string;
-  aqi: number;
-  category: string;
-  audience: AdvisoryAudience;
-  language: SupportedLanguageCode;
-  cleanestWindow?: string;
-}): Promise<string> {
+export async function generateCommunityAdvisoryWithGemini(
+  args: AdvisoryPromptInput
+): Promise<string> {
   return generateText(buildAdvisoryPrompt(args), { kind: "advisory", ...args });
 }

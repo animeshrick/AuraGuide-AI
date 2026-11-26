@@ -3,7 +3,8 @@ import { LIMITS } from "@/domain/limits";
 import type { CommuteMode, HouseholdProfile } from "@/domain/types";
 import { isAbortError, useLatestRequest } from "@/hooks/useLatestRequest";
 import type { SupportedLanguage } from "@/i18n";
-import { ApiClientError, ClientErrorCode, requestWhatIf, WhatIfResult } from "@/lib/api-client";
+import type { ClientErrorCode, WhatIfResult } from "@/lib/api-client";
+import { ApiClientError, requestWhatIf } from "@/lib/api-client";
 
 /**
  * Sends what-if questions and keeps only the latest answer. A new question

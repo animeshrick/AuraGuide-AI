@@ -1,17 +1,19 @@
 import React from "react";
 import { Cloud, Equal, Scale, ThumbsUp, TriangleAlert, Wind } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { Dictionary, formatMessage } from "@/i18n";
+import type { Dictionary } from "@/i18n";
+import { formatMessage } from "@/i18n";
 import type { WhatIfResult } from "@/lib/api-client";
 import { formatKg } from "@/lib/format";
-import { NOTICE } from "../styles";
-import { barWidths, WhatIfVerdict, whatIfVerdict } from "@/lib/whatif-verdict";
+import { bySign } from "@/lib/by-sign";
+import { NOTICE, PANEL } from "../styles";
+import type { VerdictLook } from "../VerdictCard";
+import { VerdictCard } from "../VerdictCard";
+import type { WhatIfVerdict } from "@/lib/whatif-verdict";
+import { barWidths, whatIfVerdict } from "@/lib/whatif-verdict";
 
 /** Each verdict has a word, an icon and a colour, so colour is never the only signal. */
-const VERDICT_LOOK: Record<
-  WhatIfVerdict,
-  { Icon: LucideIcon; box: string; icon: string; bar: string }
-> = {
+const VERDICT_LOOK: Record<WhatIfVerdict, VerdictLook & { bar: string }> = {
   better: {
     Icon: ThumbsUp,
     box: "border-emerald-300 bg-emerald-50 text-emerald-950",
@@ -46,18 +48,17 @@ function describeChange(result: MatchedResult, t: Dictionary["whatIf"]) {
   const savedKg = Math.round(result.savedEmissionsKg * 100) / 100;
   const verdict = whatIfVerdict(result.exposureChangePercentage, result.savedEmissionsKg);
 
-  const airHeadline =
-    airPct < 0
-      ? formatMessage(t.breathBetter, { pct: Math.abs(airPct) })
-      : airPct > 0
-        ? formatMessage(t.breathWorse, { pct: airPct })
-        : t.breathSame;
-  const fumesHeadline =
-    savedKg > 0
-      ? formatMessage(t.fumesBetter, { kg: formatKg(savedKg) })
-      : savedKg < 0
-        ? formatMessage(t.fumesWorse, { kg: formatKg(Math.abs(savedKg)) })
-        : t.fumesSame;
+  // Less air breathed in is better, so the sign is flipped for the air headline.
+  const airHeadline = bySign(-airPct, {
+    positive: formatMessage(t.breathBetter, { pct: Math.abs(airPct) }),
+    negative: formatMessage(t.breathWorse, { pct: airPct }),
+    zero: t.breathSame,
+  });
+  const fumesHeadline = bySign(savedKg, {
+    positive: formatMessage(t.fumesBetter, { kg: formatKg(savedKg) }),
+    negative: formatMessage(t.fumesWorse, { kg: formatKg(Math.abs(savedKg)) }),
+    zero: t.fumesSame,
+  });
 
   return {
     verdict,
@@ -76,82 +77,50 @@ function describeChange(result: MatchedResult, t: Dictionary["whatIf"]) {
 
 /** Bar colour for a change where a positive number is the better result. */
 function toneFor(improvement: number): string {
-  if (improvement > 0) return VERDICT_LOOK.better.bar;
-  if (improvement < 0) return VERDICT_LOOK.worse.bar;
-  return VERDICT_LOOK.same.bar;
+  return bySign(improvement, {
+    positive: VERDICT_LOOK.better.bar,
+    negative: VERDICT_LOOK.worse.bar,
+    zero: VERDICT_LOOK.same.bar,
+  });
 }
 
-/** The engine's result for one what-if change, with a verdict, two fact cards and the explanation. */
-const WhatIfAnswer: React.FC<{
+/** The one-line verdict with its icon, and the change that was tried. */
+const VerdictBanner: React.FC<{
   result: MatchedResult;
+  verdict: WhatIfVerdict;
   dict: Dictionary;
-}> = ({ result, dict }) => {
+}> = ({ result, verdict, dict }) => {
   const t = dict.whatIf;
-  const name = result.memberName;
-  const { verdict, airHeadline, fumesHeadline, airBars, fumeBars, airTone, fumesTone } =
-    describeChange(result, t);
-  const look = VERDICT_LOOK[verdict];
-
   return (
-    <div className="space-y-4">
-      <div className={`rounded-2xl border-2 p-4 sm:p-5 flex items-start gap-4 ${look.box}`}>
-        <span
-          className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${look.icon}`}
-        >
-          <look.Icon className="w-6 h-6" aria-hidden="true" />
-        </span>
-        <div>
-          <h3 className="text-xl font-bold leading-snug">
-            {formatMessage(t.verdict[verdict], { name })}
-          </h3>
-          <p className="text-base mt-1">
-            {formatMessage(t.changeLine, {
-              from: t.modeShort[result.fromMode],
-              to: t.modeShort[result.toMode],
-            })}
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FactCard
-          icon={Wind}
-          title={formatMessage(t.breathTitle, { name })}
-          headline={airHeadline}
-          note={t.breathNote}
-          nowLabel={t.barNow}
-          afterLabel={t.barAfter}
-          bars={airBars}
-          tone={airTone}
-        />
-        <FactCard
-          icon={Cloud}
-          title={t.fumesTitle}
-          headline={fumesHeadline}
-          note={t.fumesNote}
-          nowLabel={t.barNow}
-          afterLabel={t.barAfter}
-          bars={fumeBars}
-          tone={fumesTone}
-          nowText={`${formatKg(result.householdBaselineEmissionsKg)} kg`}
-          afterText={`${formatKg(result.householdRecalculatedEmissionsKg)} kg`}
-        />
-      </div>
-
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 space-y-2">
-        <h4 className="text-base font-bold text-slate-900">{t.simpleWords}</h4>
-        <p className="text-base text-slate-900 leading-relaxed whitespace-pre-line">
-          {result.explanation}
-        </p>
-        <p className="text-sm text-slate-700">
-          {t.viaGemini}
-          {". "}
-          {t.numbersNote}
-        </p>
-      </div>
-    </div>
+    <VerdictCard look={VERDICT_LOOK[verdict]}>
+      <h3 className="text-xl font-bold leading-snug">
+        {formatMessage(t.verdict[verdict], { name: result.memberName })}
+      </h3>
+      <p className="text-base">
+        {formatMessage(t.changeLine, {
+          from: t.modeShort[result.fromMode],
+          to: t.modeShort[result.toMode],
+        })}
+      </p>
+    </VerdictCard>
   );
 };
+
+/** Gemini's plain-words explanation, with a note that the numbers come from the engine. */
+const ExplanationCard: React.FC<{ explanation: string; t: Dictionary["whatIf"] }> = ({
+  explanation,
+  t,
+}) => (
+  <div className={`${PANEL} space-y-2`}>
+    <h4 className="text-base font-bold text-slate-900">{t.simpleWords}</h4>
+    <p className="text-base text-slate-900 leading-relaxed whitespace-pre-line">{explanation}</p>
+    <p className="text-sm text-slate-700">
+      {t.viaGemini}
+      {". "}
+      {t.numbersNote}
+    </p>
+  </div>
+);
 
 /** One number that changes, in words first and as two bars second. */
 const FactCard: React.FC<{
@@ -177,7 +146,7 @@ const FactCard: React.FC<{
   nowText,
   afterText,
 }) => (
-  <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+  <div className={PANEL}>
     <p className="flex items-center gap-2 text-base font-semibold text-slate-900">
       <Icon className="w-5 h-5 text-sky-700 shrink-0" aria-hidden="true" />
       {title}
@@ -208,6 +177,50 @@ const BarRow: React.FC<{ label: string; width: number; className: string; text?:
     {text && <span className="w-16 shrink-0 text-right font-semibold">{text}</span>}
   </div>
 );
+
+/** The engine's result for one what-if change, with a verdict, two fact cards and the explanation. */
+const WhatIfAnswer: React.FC<{
+  result: MatchedResult;
+  dict: Dictionary;
+}> = ({ result, dict }) => {
+  const t = dict.whatIf;
+  const name = result.memberName;
+  const { verdict, airHeadline, fumesHeadline, airBars, fumeBars, airTone, fumesTone } =
+    describeChange(result, t);
+
+  return (
+    <div className="space-y-4">
+      <VerdictBanner result={result} verdict={verdict} dict={dict} />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <FactCard
+          icon={Wind}
+          title={formatMessage(t.breathTitle, { name })}
+          headline={airHeadline}
+          note={t.breathNote}
+          nowLabel={t.barNow}
+          afterLabel={t.barAfter}
+          bars={airBars}
+          tone={airTone}
+        />
+        <FactCard
+          icon={Cloud}
+          title={t.fumesTitle}
+          headline={fumesHeadline}
+          note={t.fumesNote}
+          nowLabel={t.barNow}
+          afterLabel={t.barAfter}
+          bars={fumeBars}
+          tone={fumesTone}
+          nowText={`${formatKg(result.householdBaselineEmissionsKg)} kg`}
+          afterText={`${formatKg(result.householdRecalculatedEmissionsKg)} kg`}
+        />
+      </div>
+
+      <ExplanationCard explanation={result.explanation} t={t} />
+    </div>
+  );
+};
 
 /** Either the answer, or a plain note saying why the question could not be answered. */
 export const WhatIfResultView: React.FC<{ result: WhatIfResult; dict: Dictionary }> = ({

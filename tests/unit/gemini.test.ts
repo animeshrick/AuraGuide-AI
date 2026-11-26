@@ -1,7 +1,7 @@
 import { aiPlanCache, aiTextCache } from "@/lib/cache";
 import { computeEngineFacts } from "@/domain/engine";
 import { runWhatIf } from "@/domain/whatif";
-import { DailyPlanResponseSchema } from "@/ai/schemas";
+import { DailyPlanResponseSchema } from "@/ai/plan-schema";
 import {
   classifyGeminiError,
   finalizeGeminiPlan,
@@ -251,7 +251,10 @@ describe("finalizeGeminiPlan", () => {
 
 describe("text answers", () => {
   const outcome = (() => {
-    const result = runWhatIf(profile, airQuality.hourly, "What if I take the metro?", "m1");
+    const result = runWhatIf(profile, airQuality.hourly, {
+      question: "What if I take the metro?",
+      memberId: "m1",
+    });
     if (!result.matched) throw new Error("expected a match");
     return result;
   })();

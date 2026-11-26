@@ -11,25 +11,68 @@ const hourly = makeHourly(6);
 
 describe("computeIndoorPm25", () => {
   it("is lower with a purifier", () => {
-    expect(computeIndoorPm25(200, true, "lpg", false)).toBeLessThan(
-      computeIndoorPm25(200, false, "lpg", false)
+    expect(
+      computeIndoorPm25(200, {
+        purifierRuns: true,
+        cookingFuel: "lpg",
+        incenseBurning: false,
+        isCookingHour: false,
+      })
+    ).toBeLessThan(
+      computeIndoorPm25(200, {
+        purifierRuns: false,
+        cookingFuel: "lpg",
+        incenseBurning: false,
+        isCookingHour: false,
+      })
     );
   });
 
   it("rises with burning biomass while cooking", () => {
-    expect(computeIndoorPm25(100, false, "biomass", false, true)).toBeGreaterThan(
-      computeIndoorPm25(100, false, "lpg", false, true)
+    expect(
+      computeIndoorPm25(100, {
+        purifierRuns: false,
+        cookingFuel: "biomass",
+        incenseBurning: false,
+        isCookingHour: true,
+      })
+    ).toBeGreaterThan(
+      computeIndoorPm25(100, {
+        purifierRuns: false,
+        cookingFuel: "lpg",
+        incenseBurning: false,
+        isCookingHour: true,
+      })
     );
   });
 
   it("rises with incense or coils", () => {
-    expect(computeIndoorPm25(100, false, "lpg", true)).toBeGreaterThan(
-      computeIndoorPm25(100, false, "lpg", false)
+    expect(
+      computeIndoorPm25(100, {
+        purifierRuns: false,
+        cookingFuel: "lpg",
+        incenseBurning: true,
+        isCookingHour: false,
+      })
+    ).toBeGreaterThan(
+      computeIndoorPm25(100, {
+        purifierRuns: false,
+        cookingFuel: "lpg",
+        incenseBurning: false,
+        isCookingHour: false,
+      })
     );
   });
 
   it("is zero when there is nothing outdoors and nothing burning", () => {
-    expect(computeIndoorPm25(0, false, "lpg", false)).toBe(0);
+    expect(
+      computeIndoorPm25(0, {
+        purifierRuns: false,
+        cookingFuel: "lpg",
+        incenseBurning: false,
+        isCookingHour: false,
+      })
+    ).toBe(0);
   });
 });
 

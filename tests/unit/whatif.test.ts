@@ -82,7 +82,10 @@ describe("runWhatIf", () => {
   const profile = makeProfile();
 
   it("recalculates household emissions when a car commute becomes the metro", () => {
-    const outcome = runWhatIf(profile, hourly, "What if I take the metro instead?", "m1");
+    const outcome = runWhatIf(profile, hourly, {
+      question: "What if I take the metro instead?",
+      memberId: "m1",
+    });
     expect(outcome.matched).toBe(true);
     if (!outcome.matched) return;
 
@@ -101,7 +104,10 @@ describe("runWhatIf", () => {
   });
 
   it("recalculates exposure from the same engine", () => {
-    const outcome = runWhatIf(profile, hourly, "What if I cycle instead?", "m1");
+    const outcome = runWhatIf(profile, hourly, {
+      question: "What if I cycle instead?",
+      memberId: "m1",
+    });
     expect(outcome.matched).toBe(true);
     if (!outcome.matched) return;
     expect(outcome.baselineExposureDose).toBeGreaterThan(0);
@@ -109,15 +115,21 @@ describe("runWhatIf", () => {
   });
 
   it("explains why a question could not be answered", () => {
-    expect(runWhatIf(profile, hourly, "Is it safe outside?", "m1")).toMatchObject({
+    expect(
+      runWhatIf(profile, hourly, { question: "Is it safe outside?", memberId: "m1" })
+    ).toMatchObject({
       matched: false,
       reason: "no_mode",
     });
-    expect(runWhatIf(profile, hourly, "What if I drive?", "m1")).toMatchObject({
+    expect(
+      runWhatIf(profile, hourly, { question: "What if I drive?", memberId: "m1" })
+    ).toMatchObject({
       matched: false,
       reason: "same_mode",
     });
-    expect(runWhatIf(profile, hourly, "What if I cycle?", "m3")).toMatchObject({
+    expect(
+      runWhatIf(profile, hourly, { question: "What if I cycle?", memberId: "m3" })
+    ).toMatchObject({
       matched: false,
       reason: "no_commute",
     });
@@ -129,24 +141,36 @@ describe("runWhatIf with a chosen mode", () => {
   const profile = makeProfile();
 
   it("uses the chosen mode and ignores what the question says", () => {
-    const outcome = runWhatIf(profile, hourly, "What if I cycle?", "m1", "metro");
+    const outcome = runWhatIf(profile, hourly, {
+      question: "What if I cycle?",
+      memberId: "m1",
+      toMode: "metro",
+    });
     expect(outcome).toMatchObject({ matched: true, toMode: "metro" });
   });
 
   it("works when the question names no mode at all", () => {
-    const outcome = runWhatIf(profile, hourly, "What if Rajesh changed to: Bus?", "m1", "bus");
+    const outcome = runWhatIf(profile, hourly, {
+      question: "What if Rajesh changed to: Bus?",
+      memberId: "m1",
+      toMode: "bus",
+    });
     expect(outcome).toMatchObject({ matched: true, toMode: "bus" });
   });
 
   it("still says when the chosen mode is the one already used", () => {
-    expect(runWhatIf(profile, hourly, "anything", "m1", "car_ice")).toMatchObject({
+    expect(
+      runWhatIf(profile, hourly, { question: "anything", memberId: "m1", toMode: "car_ice" })
+    ).toMatchObject({
       matched: false,
       reason: "same_mode",
     });
   });
 
   it("still says when the person does not travel", () => {
-    expect(runWhatIf(profile, hourly, "anything", "m3", "metro")).toMatchObject({
+    expect(
+      runWhatIf(profile, hourly, { question: "anything", memberId: "m3", toMode: "metro" })
+    ).toMatchObject({
       matched: false,
       reason: "no_commute",
     });

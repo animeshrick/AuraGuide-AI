@@ -1,4 +1,4 @@
-import { CommuteMode } from "./types";
+import type { CommuteMode } from "./types";
 
 /** English labels used inside engine-generated text. */
 export const COMMUTE_MODE_LABELS: Record<CommuteMode, string> = {

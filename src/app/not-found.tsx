@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { CENTERED_PAGE } from "@/components/styles";
 
 /** The 404 page. */
 export default function NotFound() {
   return (
-    <main className="flex-1 flex items-center justify-center px-4 py-16">
+    <main className={CENTERED_PAGE}>
       <div className="max-w-md text-center space-y-4">
         <h1 className="text-2xl font-bold text-slate-900">Page not found</h1>
         <p className="text-slate-700">That page does not exist.</p>

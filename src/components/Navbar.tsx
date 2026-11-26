@@ -2,7 +2,8 @@
 
 import React from "react";
 import { Globe, Sparkles, Wind } from "lucide-react";
-import { Dictionary, getDictionary, SupportedLanguage } from "@/i18n";
+import type { Dictionary, SupportedLanguage } from "@/i18n";
+import { getDictionary } from "@/i18n";
 
 interface NavbarProps {
   currentLanguage: SupportedLanguage;

@@ -4,3 +4,7 @@ export const INPUT_CLASS =
 export const LABEL_CLASS = "block text-xs font-medium text-slate-800 mb-1";
 export const CHECKBOX_CLASS =
   "mt-1 w-4 h-4 text-sky-700 rounded border-slate-300 focus:ring-sky-600";
+/** A white section of the household form. */
+export const FORM_SECTION = "bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6";
+/** The heading of a household form section. */
+export const FORM_HEADING = "text-lg font-bold text-slate-900 flex items-center gap-2";

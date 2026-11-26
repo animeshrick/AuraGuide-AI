@@ -22,6 +22,7 @@ export function outlookLevel(aqi: number): OutlookLevel {
   return "avoid";
 }
 
+/** True for the hours people are usually out, which are the only ones the outlook counts. */
 function isDaytime(hour: number): boolean {
   return hour >= DAYTIME_START_HOUR && hour < DAYTIME_END_HOUR;
 }

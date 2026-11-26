@@ -1,7 +1,7 @@
 import { dailyCommuteEmissionsKg, roundKg } from "./emissions";
 import { calculateMemberExposure } from "./exposure";
 import { staysAtHome } from "./modes";
-import {
+import type {
   CommuteMode,
   HourlyAirQuality,
   HouseholdMember,
@@ -59,7 +59,9 @@ const MODE_KEYWORDS: Record<CommuteMode, { ascii: string[]; native: string[] }> 
   },
 };
 
+/** Lookbehind: the word does not continue to the left (letters, marks, digits, "_" or "-"). */
 const NOT_AFTER = "(?<![\\p{L}\\p{M}\\p{N}_-])";
+/** Lookahead: the word does not continue to the right. */
 const NOT_BEFORE = "(?![\\p{L}\\p{M}\\p{N}_])";
 
 /** A mode with no words is skipped: an empty alternation would match every question. */
@@ -86,6 +88,7 @@ const REPLACEMENT_MARKERS: { pattern: RegExp; newModeFirst: boolean }[] = [
   { pattern: /এর বদলে|এর পরিবর্তে|বদলে|পরিবর্তে/u, newModeFirst: false },
 ];
 
+/** Every commute mode named in the text, in the order they appear. */
 function modesIn(text: string): { mode: CommuteMode; index: number }[] {
   return MODE_PATTERNS.map(({ mode, pattern }) => ({ mode, index: text.search(pattern) }))
     .filter((m) => m.index >= 0)
@@ -122,10 +125,12 @@ export function detectModeFromQuestion(
   return (others[0] ?? candidates[0]).mode;
 }
 
+/** The first word of a member's name, so "Asha (mother)" is matched by "Asha". */
 function firstName(name: string): string {
   return name.split(/[\s(]/)[0] ?? "";
 }
 
+/** Make user-typed text safe to place inside a regular expression. */
 function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -166,10 +171,9 @@ export function pickMember(
 export function runWhatIf(
   profile: HouseholdProfile,
   hourly: HourlyAirQuality[],
-  question: string,
-  memberId?: string,
-  chosenMode?: CommuteMode
+  request: { question: string; memberId?: string; toMode?: CommuteMode }
 ): WhatIfOutcome {
+  const { question, memberId, toMode: chosenMode } = request;
   const member = pickMember(profile, question, memberId);
   const base = {
     memberId: member.id,

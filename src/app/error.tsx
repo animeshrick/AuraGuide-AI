@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { CENTERED_PAGE } from "@/components/styles";
 
 /** Shown when a page fails to render, with a way to try again. */
 export default function ErrorPage({
@@ -10,7 +11,7 @@ export default function ErrorPage({
   reset: () => void;
 }) {
   return (
-    <main className="flex-1 flex items-center justify-center px-4 py-16">
+    <main className={CENTERED_PAGE}>
       <div className="max-w-md text-center space-y-4">
         <h1 className="text-2xl font-bold text-slate-900">Something went wrong</h1>
         <p className="text-slate-700">

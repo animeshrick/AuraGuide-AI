@@ -1,11 +1,11 @@
-import type { AdvisoryAudience } from "@/domain/types";
 import type {
+  AdvisoryAudience,
+  AirQualitySource,
   AQICategory,
   CommuteMode,
   DailyPlanResponse,
   HouseholdProfile,
   WhatIfOutcome,
-  AirQualitySource,
 } from "@/domain/types";
 import type { SupportedLanguage } from "@/i18n";
 
@@ -29,6 +29,7 @@ export class ApiClientError extends Error {
   }
 }
 
+/** Server error codes, grouped into the smaller set of messages the page shows. */
 const KNOWN_CODES: Record<string, ClientErrorCode> = {
   rate_limited: "rate_limited",
   invalid_request: "invalid_request",
@@ -39,10 +40,10 @@ const KNOWN_CODES: Record<string, ClientErrorCode> = {
   internal_error: "internal_error",
 };
 
-async function postJson<T>(url: string, body: unknown, signal?: AbortSignal): Promise<T> {
-  let response: Response;
+/** Send the request. A cancelled request is passed on; anything else is a network error. */
+async function send(url: string, body: unknown, signal?: AbortSignal): Promise<Response> {
   try {
-    response = await fetch(url, {
+    return await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -52,23 +53,32 @@ async function postJson<T>(url: string, body: unknown, signal?: AbortSignal): Pr
     if (err instanceof DOMException && err.name === "AbortError") throw err;
     throw new ApiClientError("network", "Could not reach the server.");
   }
+}
 
-  let data: unknown = null;
+/** The JSON body, or null when the body is not JSON. */
+async function readBody(response: Response): Promise<unknown> {
   try {
-    data = await response.json();
+    return await response.json();
   } catch {
-    // A non-JSON body is handled below.
+    return null;
   }
+}
 
+/** The error code the server put in a failed response, mapped to one the page can show. */
+function errorCodeOf(data: unknown): ClientErrorCode {
+  const code =
+    data !== null && typeof data === "object" && "code" in data && typeof data.code === "string"
+      ? data.code
+      : "";
+  return KNOWN_CODES[code] ?? "internal_error";
+}
+
+/** POST a JSON body and return the JSON answer. Throws ApiClientError for any failure except a cancelled request. */
+async function postJson<T>(url: string, body: unknown, signal?: AbortSignal): Promise<T> {
+  const response = await send(url, body, signal);
+  const data = await readBody(response);
   if (!response.ok) {
-    const code =
-      data && typeof data === "object" && "code" in data && typeof data.code === "string"
-        ? data.code
-        : "";
-    throw new ApiClientError(
-      KNOWN_CODES[code] ?? "internal_error",
-      `Request failed (${response.status}).`
-    );
+    throw new ApiClientError(errorCodeOf(data), `Request failed (${response.status}).`);
   }
   if (data === null || typeof data !== "object") {
     throw new ApiClientError("internal_error", "The server sent an unreadable answer.");
@@ -84,6 +94,7 @@ export function requestPlan(
   return postJson<DailyPlanResponse>("/api/plan", profile, signal);
 }
 
+/** A what-if answer: the engine's numbers plus Gemini's explanation. */
 interface WhatIfMatchedResult extends Extract<WhatIfOutcome, { matched: true }> {
   question: string;
   currentAQI: number;
@@ -91,10 +102,12 @@ interface WhatIfMatchedResult extends Extract<WhatIfOutcome, { matched: true }> 
   explanationSource: "gemini";
 }
 
+/** A what-if question the engine could not answer, with the reason. */
 interface WhatIfUnmatchedResult extends Extract<WhatIfOutcome, { matched: false }> {
   question: string;
 }
 
+/** What the what-if route returns. */
 export type WhatIfResult = WhatIfMatchedResult | WhatIfUnmatchedResult;
 
 /** Ask the server what changes if one member travels another way. */
@@ -111,6 +124,7 @@ export function requestWhatIf(
   return postJson<WhatIfResult>("/api/whatif", args, signal);
 }
 
+/** What the advisory route returns. */
 export interface AdvisoryResult {
   city: string;
   currentAQI: number;
@@ -128,5 +142,3 @@ export function requestAdvisory(
 ): Promise<AdvisoryResult> {
   return postJson<AdvisoryResult>("/api/advisory", args, signal);
 }
-
-export type { CommuteMode };

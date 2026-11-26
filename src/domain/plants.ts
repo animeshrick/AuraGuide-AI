@@ -1,4 +1,4 @@
-import { HouseholdProfile } from "./types";
+import type { HouseholdProfile } from "./types";
 
 type PlantId =
   | "snake_plant"

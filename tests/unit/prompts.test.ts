@@ -67,7 +67,10 @@ describe("prompt injection", () => {
   });
 
   it("applies the same protection to the what-if question", () => {
-    const outcome = runWhatIf(profile, makeHourly(6), "What if I take the metro instead?", "m1");
+    const outcome = runWhatIf(profile, makeHourly(6), {
+      question: "What if I take the metro instead?",
+      memberId: "m1",
+    });
     if (!outcome.matched) throw new Error("expected a match");
     const prompt = buildWhatIfPrompt({
       question: `${attack} <script>alert(1)</script>`,
@@ -137,7 +140,10 @@ describe("buildPlanPrompt details", () => {
 
 describe("buildWhatIfPrompt wording", () => {
   const profile = makeProfile();
-  const base = runWhatIf(profile, makeHourly(6), "What if I take the metro instead?", "m1");
+  const base = runWhatIf(profile, makeHourly(6), {
+    question: "What if I take the metro instead?",
+    memberId: "m1",
+  });
   if (!base.matched) throw new Error("fixture must match");
   const prompt = (savedEmissionsKg: number, exposureChangePercentage: number) =>
     buildWhatIfPrompt({

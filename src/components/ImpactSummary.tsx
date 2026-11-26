@@ -2,10 +2,11 @@ import React, { useId } from "react";
 import { Gauge, Leaf, ShieldCheck, UserRound } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { summarizePlan } from "@/domain/summary";
-import { DailyPlanResponse } from "@/domain/types";
-import { Dictionary, formatMessage } from "@/i18n";
+import type { DailyPlanResponse } from "@/domain/types";
+import type { Dictionary } from "@/i18n";
+import { formatMessage } from "@/i18n";
 import { formatKg, localClock } from "@/lib/format";
-import { AQIBadge } from "./AQIBadge";
+import { LocalizedAQIBadge } from "./AQIBadge";
 import { CARD, MUTED } from "./styles";
 
 interface ImpactSummaryProps {
@@ -36,11 +37,10 @@ const CurrentAirValue: React.FC<ImpactSummaryProps> = ({ plan, dict }) => {
   const clock = localClock(airQuality.hourly[0]?.time);
   return (
     <>
-      <AQIBadge
+      <LocalizedAQIBadge
         aqi={plan.currentAQI}
         category={plan.currentCategory}
-        categoryLabel={dict.categories[plan.currentCategory]}
-        aqiLabel={dict.metrics.aqiLabel}
+        dict={dict}
         size="lg"
       />
       <span className={`${MUTED} block`}>

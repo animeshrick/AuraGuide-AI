@@ -3,13 +3,14 @@ import { Trash2 } from "lucide-react";
 import { LIMITS } from "@/domain/limits";
 import { staysAtHome } from "@/domain/modes";
 import type { HouseholdMember } from "@/domain/types";
-import { Dictionary, formatMessage } from "@/i18n";
+import type { Dictionary } from "@/i18n";
+import { formatMessage } from "@/i18n";
 import { ActivityList } from "./ActivityList";
 import { CheckboxCard } from "./CheckboxCard";
 import { CommuteFields } from "./CommuteFields";
-import { INPUT_CLASS, LABEL_CLASS } from "./fieldStyles";
 import { ModeSelect } from "./ModeSelect";
 import { NumberField } from "./NumberField";
+import { TextField } from "./TextField";
 import { SensitivityPicker } from "./SensitivityPicker";
 import type { MemberActions } from "./useHouseholdForm";
 
@@ -57,18 +58,13 @@ const MemberBasics: React.FC<{
 }> = ({ id: mid, member, version, dict, onChange, registerNameInput }) => (
   <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
     <div className="sm:col-span-2">
-      <label htmlFor={`${mid}-name`} className={LABEL_CLASS}>
-        {dict.form.memberName}
-      </label>
-      <input
+      <TextField
         id={`${mid}-name`}
-        ref={registerNameInput}
-        type="text"
-        required
-        maxLength={LIMITS.memberNameMaxLength}
+        label={dict.form.memberName}
         value={member.name}
-        onChange={(e) => onChange({ name: e.target.value })}
-        className={INPUT_CLASS}
+        maxLength={LIMITS.memberNameMaxLength}
+        inputRef={registerNameInput}
+        onChange={(name) => onChange({ name })}
       />
     </div>
     <NumberField

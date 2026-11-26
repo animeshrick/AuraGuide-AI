@@ -13,7 +13,7 @@ import {
 import { indexByHour, meanOf } from "./hourly";
 import { COMMUTE_MODE_LABELS, formatHour } from "./labels";
 import { staysAtHome } from "./modes";
-import {
+import type {
   CommuteMode,
   HourlyAirQuality,
   HouseholdMember,
@@ -26,29 +26,22 @@ import { shiftActivityHour } from "./windows";
 const COOKING_HOURS: readonly number[] = DAY_MODEL.cookingHours;
 const INCENSE_HOURS: readonly number[] = DAY_MODEL.incenseHours;
 
-/**
- * PM2.5 inside the home for one hour.
- * `usesIncense` means incense or coils are burning during this hour.
- */
-export function computeIndoorPm25(
-  outdoorPm25: number,
-  hasPurifier: boolean,
-  cookingFuel: HouseholdProfile["cookingFuel"],
-  usesIncense: boolean,
-  isCookingHour: boolean = false
-): number {
-  let indoor = outdoorPm25 * INFILTRATION_FACTORS.standard_closed_windows;
+/** What is adding to or cleaning the air at home during one hour. */
+export interface IndoorSources {
+  purifierRuns: boolean;
+  cookingFuel: HouseholdProfile["cookingFuel"];
+  incenseBurning: boolean;
+  isCookingHour: boolean;
+}
 
-  if (isCookingHour && cookingFuel === "biomass") {
+/** PM2.5 inside the home for one hour, from the outdoor level and the home's own sources. */
+export function computeIndoorPm25(outdoorPm25: number, sources: IndoorSources): number {
+  let indoor = outdoorPm25 * INFILTRATION_FACTORS.standard_closed_windows;
+  if (sources.isCookingHour && sources.cookingFuel === "biomass") {
     indoor += INFILTRATION_FACTORS.biomass_indoor_added_pm;
   }
-  if (usesIncense) {
-    indoor += INFILTRATION_FACTORS.incense_coil_added_pm;
-  }
-  if (hasPurifier) {
-    indoor = indoor * INFILTRATION_FACTORS.with_hepa_purifier;
-  }
-
+  if (sources.incenseBurning) indoor += INFILTRATION_FACTORS.incense_coil_added_pm;
+  if (sources.purifierRuns) indoor *= INFILTRATION_FACTORS.with_hepa_purifier;
   return Math.round(indoor * 10) / 10;
 }
 
@@ -98,60 +91,96 @@ export function calculateMemberExposure(
   hourlyData: HourlyAirQuality[],
   isOptimized: boolean = false
 ): number {
-  const byHour = indexByHour(hourlyData);
-  const meanPm25 = meanOf(hourlyData.map((h) => h.pm25));
-  const pmAt = (hour: number) => byHour.get(hour)?.pm25 ?? meanPm25;
-
-  const commutes = !staysAtHome(member.commuteMode);
-  const travelMode: CommuteMode = isOptimized
-    ? recommendModeSwap(member.commuteMode)
-    : member.commuteMode;
-  const purifierRuns = isOptimized || profile.hasAirPurifier;
-  const burnsIncense = !isOptimized && profile.usesIncenseOrCoils;
-  const legFraction = commutes
-    ? Math.min(Math.max(member.commuteTimeMinutes, 0) / 60, DAY_MODEL.maxCommuteHoursPerLeg)
-    : 0;
-  const commuteHours: number[] = [DAY_MODEL.morningCommuteHour, DAY_MODEL.eveningCommuteHour];
-  const away = DAY_MODEL.awayFromHome;
-
-  const activityMinutes = activityMinutesByHour(member.outdoorActivities, (activity) =>
-    isOptimized ? shiftActivityHour(hourlyData, activity.preferredHour) : activity.preferredHour
-  );
-
+  const day = describeDay(member, profile, hourlyData, isOptimized);
   let totalDose = 0;
-
-  for (let hour = 0; hour < 24; hour++) {
-    const outdoorPm25 = pmAt(hour);
-    const atHome = !(commutes && hour >= away.startHour && hour <= away.endHour);
-
-    const indoorPm25 = computeIndoorPm25(
-      outdoorPm25,
-      purifierRuns && atHome,
-      profile.cookingFuel,
-      burnsIncense && atHome && INCENSE_HOURS.includes(hour),
-      atHome && COOKING_HOURS.includes(hour)
-    );
-
-    const commuteFraction = commuteHours.includes(hour) ? legFraction : 0;
-    const activityFraction = Math.min((activityMinutes.get(hour) ?? 0) / 60, 1 - commuteFraction);
-    const indoorFraction = 1 - commuteFraction - activityFraction;
-
-    const indoorRate = isSleepHour(hour)
-      ? INHALATION_RATES_M3_PER_HOUR.resting
-      : INHALATION_RATES_M3_PER_HOUR.sedentary_indoor;
-
-    let travelPm25 = outdoorPm25 * COMMUTE_AMBIENT_FACTOR[travelMode];
-    if (isOptimized) travelPm25 *= N95_PENETRATION;
-
-    totalDose +=
-      indoorPm25 * indoorRate * indoorFraction +
-      travelPm25 * COMMUTE_INHALATION_RATE[travelMode] * commuteFraction +
-      outdoorPm25 * INHALATION_RATES_M3_PER_HOUR.walking * activityFraction;
-  }
-
+  for (let hour = 0; hour < 24; hour++) totalDose += doseForHour(hour, day);
   return Math.round(totalDose * getSensitivityMultiplier(member));
 }
 
+/** Everything about one person's normal or optimised day that the hourly dose depends on. */
+interface DayScenario {
+  pmAt: (hour: number) => number;
+  commutes: boolean;
+  travelMode: CommuteMode;
+  wearsN95: boolean;
+  purifierRuns: boolean;
+  burnsIncense: boolean;
+  cookingFuel: HouseholdProfile["cookingFuel"];
+  /** Share of one hour each commute leg takes. */
+  legFraction: number;
+  activityMinutes: Map<number, number>;
+}
+
+/** Work out the scenario once per person, so the hourly loop only does arithmetic. */
+function describeDay(
+  member: HouseholdMember,
+  profile: HouseholdProfile,
+  hourlyData: HourlyAirQuality[],
+  isOptimized: boolean
+): DayScenario {
+  const byHour = indexByHour(hourlyData);
+  const meanPm25 = meanOf(hourlyData.map((h) => h.pm25));
+  const commutes = !staysAtHome(member.commuteMode);
+  const commuteHours = Math.max(member.commuteTimeMinutes, 0) / 60;
+  return {
+    pmAt: (hour) => byHour.get(hour)?.pm25 ?? meanPm25,
+    commutes,
+    travelMode: isOptimized ? recommendModeSwap(member.commuteMode) : member.commuteMode,
+    wearsN95: isOptimized,
+    purifierRuns: isOptimized || profile.hasAirPurifier,
+    burnsIncense: !isOptimized && profile.usesIncenseOrCoils,
+    cookingFuel: profile.cookingFuel,
+    legFraction: commutes ? Math.min(commuteHours, DAY_MODEL.maxCommuteHoursPerLeg) : 0,
+    activityMinutes: activityMinutesByHour(member.outdoorActivities, (activity) =>
+      isOptimized ? shiftActivityHour(hourlyData, activity.preferredHour) : activity.preferredHour
+    ),
+  };
+}
+
+const COMMUTE_HOURS: readonly number[] = [
+  DAY_MODEL.morningCommuteHour,
+  DAY_MODEL.eveningCommuteHour,
+];
+
+/** People who commute are at work or school during the day, not at home. */
+function isAtHome(hour: number, commutes: boolean): boolean {
+  const away = DAY_MODEL.awayFromHome;
+  return !(commutes && hour >= away.startHour && hour <= away.endHour);
+}
+
+/** Breathing rate indoors: resting at night, sitting during the day. */
+function indoorBreathingRate(hour: number): number {
+  return isSleepHour(hour)
+    ? INHALATION_RATES_M3_PER_HOUR.resting
+    : INHALATION_RATES_M3_PER_HOUR.sedentary_indoor;
+}
+
+/** PM2.5 inhaled in one hour: time at home or work, travelling, and outdoors. */
+function doseForHour(hour: number, day: DayScenario): number {
+  const outdoorPm25 = day.pmAt(hour);
+  const atHome = isAtHome(hour, day.commutes);
+  const indoorPm25 = computeIndoorPm25(outdoorPm25, {
+    purifierRuns: day.purifierRuns && atHome,
+    cookingFuel: day.cookingFuel,
+    incenseBurning: day.burnsIncense && atHome && INCENSE_HOURS.includes(hour),
+    isCookingHour: atHome && COOKING_HOURS.includes(hour),
+  });
+
+  const commuteFraction = COMMUTE_HOURS.includes(hour) ? day.legFraction : 0;
+  const activityFraction = Math.min((day.activityMinutes.get(hour) ?? 0) / 60, 1 - commuteFraction);
+  const indoorFraction = 1 - commuteFraction - activityFraction;
+  const indoorRate = indoorBreathingRate(hour);
+  const travelPm25 =
+    outdoorPm25 * COMMUTE_AMBIENT_FACTOR[day.travelMode] * (day.wearsN95 ? N95_PENETRATION : 1);
+
+  return (
+    indoorPm25 * indoorRate * indoorFraction +
+    travelPm25 * COMMUTE_INHALATION_RATE[day.travelMode] * commuteFraction +
+    outdoorPm25 * INHALATION_RATES_M3_PER_HOUR.walking * activityFraction
+  );
+}
+
+/** The changes behind the optimised day, in plain words. Used when the model's own wording is missing. */
 function describeChanges(
   member: HouseholdMember,
   profile: HouseholdProfile,

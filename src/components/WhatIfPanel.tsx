@@ -3,13 +3,15 @@
 import React, { useId, useState } from "react";
 import { MessageCircleQuestion } from "lucide-react";
 import { staysAtHome } from "@/domain/modes";
-import type { HouseholdProfile } from "@/domain/types";
-import { Dictionary, formatMessage, SupportedLanguage } from "@/i18n";
+import type { HouseholdMember, HouseholdProfile } from "@/domain/types";
+import type { Dictionary, SupportedLanguage } from "@/i18n";
+import { formatMessage } from "@/i18n";
 import { LabelledSelect } from "./LabelledSelect";
 import { SectionHeader } from "./SectionHeader";
 import { RequestErrorBanner } from "./StatusBanner";
 import { CARD, NOTICE } from "./styles";
-import { ModeChoices, OptionMode } from "./whatif/ModeChoices";
+import type { OptionMode } from "./whatif/ModeChoices";
+import { ModeChoices } from "./whatif/ModeChoices";
 import { QuestionForm } from "./whatif/QuestionForm";
 import { useWhatIf } from "./whatif/useWhatIf";
 import { WhatIfResultView } from "./whatif/WhatIfAnswer";
@@ -20,27 +22,59 @@ interface WhatIfPanelProps {
   dict: Dictionary;
 }
 
-/** Shown when the chosen member does not travel, so there is no trip to change. */
-const NoCommuteNotice: React.FC<{ name: string; dict: Dictionary }> = ({ name, dict }) => (
-  <p className={NOTICE}>{formatMessage(dict.whatIf.unmatched.no_commute, { name })}</p>
-);
+/**
+ * The other ways this member could travel, or a note that they have no trip to
+ * change because they stay at home or travel no distance.
+ */
+const TravelOptions: React.FC<{
+  labelId: string;
+  member: HouseholdMember;
+  activeMode: OptionMode | null;
+  disabled: boolean;
+  dict: Dictionary;
+  onChoose: (mode: OptionMode) => void;
+}> = ({ labelId, member, activeMode, disabled, dict, onChoose }) => {
+  const hasTrip = !staysAtHome(member.commuteMode) && member.commuteDistanceKm > 0;
+  if (!hasTrip) {
+    return (
+      <p className={NOTICE}>
+        {formatMessage(dict.whatIf.unmatched.no_commute, { name: member.name })}
+      </p>
+    );
+  }
+  return (
+    <ModeChoices
+      labelId={labelId}
+      currentMode={member.commuteMode}
+      activeMode={activeMode}
+      disabled={disabled}
+      dict={dict}
+      onChoose={onChoose}
+    />
+  );
+};
+
+/** Which member the question is about. `onChange` runs before the choice changes. */
+function useChosenMember(profile: HouseholdProfile, onChange: () => void) {
+  const [memberId, setMemberId] = useState(profile.members[0]?.id ?? "");
+  const member = profile.members.find((m) => m.id === memberId) ?? profile.members[0];
+  const chooseMember = (id: string) => {
+    onChange();
+    setMemberId(id);
+  };
+  return { memberId, member, chooseMember };
+}
 
 /** "What if I travel a different way?": pick a member and a mode, or type a question. */
 export const WhatIfPanel: React.FC<WhatIfPanelProps> = ({ profile, language, dict }) => {
   const uid = useId();
-  const [memberId, setMemberId] = useState(profile.members[0]?.id ?? "");
   const [activeMode, setActiveMode] = useState<OptionMode | null>(null);
   const { loading, result, error, ask, reset, clearError } = useWhatIf(profile, language);
-
-  const member = profile.members.find((m) => m.id === memberId) ?? profile.members[0];
-  const canChange = !!member && !staysAtHome(member.commuteMode) && member.commuteDistanceKm > 0;
-
-  const chooseMember = (id: string) => {
+  const { memberId, member, chooseMember } = useChosenMember(profile, () => {
     // An answer about one person must not stay on screen under another person's name.
     reset();
-    setMemberId(id);
     setActiveMode(null);
-  };
+  });
 
   const chooseMode = (mode: OptionMode) => {
     if (!member) return;
@@ -71,17 +105,16 @@ export const WhatIfPanel: React.FC<WhatIfPanelProps> = ({ profile, language, dic
         className="max-w-sm"
       />
 
-      {member && canChange && (
-        <ModeChoices
+      {member && (
+        <TravelOptions
           labelId={`${uid}-pick`}
-          currentMode={member.commuteMode}
+          member={member}
           activeMode={activeMode}
           disabled={loading}
           dict={dict}
           onChoose={chooseMode}
         />
       )}
-      {member && !canChange && <NoCommuteNotice name={member.name} dict={dict} />}
 
       <QuestionForm
         id={`${uid}-q`}

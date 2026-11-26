@@ -1,7 +1,7 @@
 import React, { useId } from "react";
 import { Home, AlertTriangle } from "lucide-react";
-import { IndoorAirAdvice } from "@/domain/types";
-import { Dictionary } from "@/i18n";
+import type { IndoorAirAdvice } from "@/domain/types";
+import type { Dictionary } from "@/i18n";
 import { SectionHeader } from "./SectionHeader";
 import { CARD } from "./styles";
 

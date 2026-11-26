@@ -1,7 +1,7 @@
 import { getAQICategory } from "./aqi";
 import { averageAQI, indexByHour, meanOf } from "./hourly";
 import { formatHourRange } from "./labels";
-import { AQICategory, HourlyAirQuality, SafeWindow } from "./types";
+import type { AQICategory, HourlyAirQuality, SafeWindow } from "./types";
 
 interface Block {
   startHour: number;
@@ -85,8 +85,10 @@ export function shiftActivityHour(
   return bestEntry.pm25 < preferredEntry.pm25 ? best : preferredHour;
 }
 
+/** A coarse AQI band, used to choose the wording of a recommendation. */
 type Band = "clean" | "elevated" | "high" | "severe";
 
+/** The band an AQI value falls in. */
 function bandFor(aqi: number): Band {
   if (aqi <= 100) return "clean";
   if (aqi <= 200) return "elevated";

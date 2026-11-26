@@ -1,4 +1,4 @@
-import { CommuteMode, HealthSensitivity } from "./types";
+import type { CommuteMode, HealthSensitivity } from "./types";
 
 /**
  * Emission factors in kg CO2e per passenger-kilometer.

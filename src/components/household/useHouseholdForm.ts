@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { DEFAULT_PROFILE, DemoHousehold } from "@/domain/demo-households";
+import type { DemoHousehold } from "@/domain/demo-households";
+import { DEFAULT_PROFILE } from "@/domain/demo-households";
 import { cleanProfile } from "@/domain/household-edit";
 import { LIMITS } from "@/domain/limits";
 import type { CookingFuel, HouseholdProfile, SupportedLanguageCode } from "@/domain/types";

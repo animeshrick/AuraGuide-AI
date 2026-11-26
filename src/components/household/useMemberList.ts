@@ -27,7 +27,8 @@ export function useMemberList(initial: HouseholdMember[]) {
     if (!memberToFocus) return;
     const input = nameInputs.current.get(memberToFocus);
     input?.focus();
-    input?.scrollIntoView?.({ block: "center", behavior: "smooth" });
+    // Jump straight there: an animated scroll can make people who are sensitive to motion unwell.
+    input?.scrollIntoView?.({ block: "center" });
     setMemberToFocus(null);
   }, [memberToFocus]);
 

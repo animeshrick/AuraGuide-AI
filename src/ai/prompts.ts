@@ -1,6 +1,6 @@
-import { EngineFacts } from "@/domain/engine";
+import type { EngineFacts } from "@/domain/engine";
 import { formatHour, formatHourRange } from "@/domain/labels";
-import {
+import type {
   AdvisoryAudience,
   CurrentAirQuality,
   HouseholdProfile,
@@ -8,6 +8,7 @@ import {
   WhatIfOutcome,
 } from "@/domain/types";
 import { sanitizeUntrusted, untrustedBlock, UNTRUSTED_DATA_RULES } from "./sanitize";
+import { bySign } from "@/lib/by-sign";
 
 /**
  * Standing rules for every request. Sent as the system instruction, separate
@@ -34,6 +35,7 @@ export function languageInstruction(language: SupportedLanguageCode): string {
   }
 }
 
+/** The household as prompt data, with every user-typed text sanitised and length-limited. */
 function untrustedMembers(profile: HouseholdProfile) {
   return {
     city: sanitizeUntrusted(profile.city, 100),
@@ -115,30 +117,31 @@ Return JSON with these fields:
 ${languageInstruction(language)}`;
 }
 
-/** The what-if prompt: the question plus the engine's recalculated figures to explain. */
-export function buildWhatIfPrompt(args: {
+/** What the what-if prompt needs: the question and the engine's recalculated result. */
+export interface WhatIfPromptInput {
   question: string;
   profile: HouseholdProfile;
   outcome: Extract<WhatIfOutcome, { matched: true }>;
   aqi: number;
   category: string;
   language: SupportedLanguageCode;
-}): string {
+}
+
+/** The what-if prompt: the question plus the engine's recalculated figures to explain. */
+export function buildWhatIfPrompt(args: WhatIfPromptInput): string {
   const { question, profile, outcome, aqi, category, language } = args;
   const member = profile.members.find((m) => m.id === outcome.memberId);
 
-  const direction =
-    outcome.savedEmissionsKg > 0
-      ? `saves ${outcome.savedEmissionsKg} kg CO2e per day`
-      : outcome.savedEmissionsKg < 0
-        ? `adds ${Math.abs(outcome.savedEmissionsKg)} kg CO2e per day`
-        : "does not change emissions";
-  const exposure =
-    outcome.exposureChangePercentage > 0
-      ? `${outcome.exposureChangePercentage}% MORE PM2.5 inhaled`
-      : outcome.exposureChangePercentage < 0
-        ? `${Math.abs(outcome.exposureChangePercentage)}% LESS PM2.5 inhaled`
-        : "no change in PM2.5 inhaled";
+  const direction = bySign(outcome.savedEmissionsKg, {
+    positive: `saves ${outcome.savedEmissionsKg} kg CO2e per day`,
+    negative: `adds ${Math.abs(outcome.savedEmissionsKg)} kg CO2e per day`,
+    zero: "does not change emissions",
+  });
+  const exposure = bySign(outcome.exposureChangePercentage, {
+    positive: `${outcome.exposureChangePercentage}% MORE PM2.5 inhaled`,
+    negative: `${Math.abs(outcome.exposureChangePercentage)}% LESS PM2.5 inhaled`,
+    zero: "no change in PM2.5 inhaled",
+  });
 
   return `A person asked a what-if question about their commute on a smog day. The app has already worked out the answer. Explain it.
 
@@ -163,23 +166,27 @@ Use only the numbers above.
 ${languageInstruction(language)}`;
 }
 
-/** The community advisory prompt for one audience, city and AQI. */
-export function buildAdvisoryPrompt(args: {
+const AUDIENCE_LABELS: Record<AdvisoryAudience, string> = {
+  school: "parents, teachers and school administration",
+  housing_society: "residents of an apartment complex or housing society (RWA)",
+  general_public: "residents of the neighbourhood",
+};
+
+/** What the community advisory prompt needs. */
+export interface AdvisoryPromptInput {
   city: string;
   aqi: number;
   category: string;
   audience: AdvisoryAudience;
   language: SupportedLanguageCode;
   cleanestWindow?: string;
-}): string {
+}
+
+/** The community advisory prompt for one audience, city and AQI. */
+export function buildAdvisoryPrompt(args: AdvisoryPromptInput): string {
   const { city, aqi, category, audience, language, cleanestWindow } = args;
 
-  const audienceLabel =
-    audience === "school"
-      ? "parents, teachers and school administration"
-      : audience === "housing_society"
-        ? "residents of an apartment complex or housing society (RWA)"
-        : "residents of the neighbourhood";
+  const audienceLabel = AUDIENCE_LABELS[audience];
 
   return `Write a short smog advisory that can be copied into a WhatsApp group or pinned on a notice board. The audience is ${audienceLabel}.
 

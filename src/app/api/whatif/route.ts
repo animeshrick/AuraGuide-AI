@@ -19,7 +19,7 @@ export const POST = createJsonRoute({
     const { airQuality } = lookup;
 
     // The engine recalculates first. The model then explains the new numbers.
-    const outcome = runWhatIf(profile, airQuality.hourly, question, memberId, toMode);
+    const outcome = runWhatIf(profile, airQuality.hourly, { question, memberId, toMode });
     if (!outcome.matched) {
       return apiJson({ ...outcome, question });
     }

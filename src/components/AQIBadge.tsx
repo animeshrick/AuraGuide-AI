@@ -1,6 +1,7 @@
 import React from "react";
-import { getAQIBadgeClass } from "@/domain/aqi";
-import { AQICategory } from "@/domain/types";
+import { getAQIBadgeClass, getAQICategory } from "@/domain/aqi";
+import type { AQICategory } from "@/domain/types";
+import type { Dictionary } from "@/i18n";
 
 interface AQIBadgeProps {
   aqi: number;
@@ -41,5 +42,27 @@ export const AQIBadge: React.FC<AQIBadgeProps> = ({
         </span>
       )}
     </span>
+  );
+};
+
+/**
+ * An AQI badge labelled in the page language. The category is worked out from
+ * the AQI when it is not given.
+ */
+export const LocalizedAQIBadge: React.FC<{
+  aqi: number;
+  category?: AQICategory;
+  dict: Dictionary;
+  size?: AQIBadgeProps["size"];
+}> = ({ aqi, category, dict, size }) => {
+  const resolved = category ?? getAQICategory(aqi);
+  return (
+    <AQIBadge
+      aqi={aqi}
+      category={resolved}
+      categoryLabel={dict.categories[resolved]}
+      aqiLabel={dict.metrics.aqiLabel}
+      size={size}
+    />
   );
 };

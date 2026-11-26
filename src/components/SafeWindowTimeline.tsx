@@ -1,9 +1,9 @@
 import React, { useId } from "react";
 import { Clock, Wind, Sun, BookOpen, Activity } from "lucide-react";
 import { formatHourRange } from "@/domain/labels";
-import { SafeWindow } from "@/domain/types";
-import { Dictionary } from "@/i18n";
-import { AQIBadge } from "./AQIBadge";
+import type { SafeWindow } from "@/domain/types";
+import type { Dictionary } from "@/i18n";
+import { LocalizedAQIBadge } from "./AQIBadge";
 import { SectionHeader } from "./SectionHeader";
 import { CARD, MUTED } from "./styles";
 
@@ -47,11 +47,10 @@ export const SafeWindowTimeline: React.FC<SafeWindowTimelineProps> = ({ safeWind
                     {ICONS[w.activity]}
                     {dict.results.windowTitles[w.activity]}
                   </h3>
-                  <AQIBadge
+                  <LocalizedAQIBadge
                     aqi={w.averageAQI}
                     category={w.category}
-                    categoryLabel={dict.categories[w.category]}
-                    aqiLabel={dict.metrics.aqiLabel}
+                    dict={dict}
                     size="sm"
                   />
                 </div>

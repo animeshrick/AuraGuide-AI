@@ -1,7 +1,7 @@
 import { calculateEmissionImpact } from "./emissions";
 import { calculateHouseholdExposureImpacts } from "./exposure";
 import { buildOutlook } from "./outlook";
-import {
+import type {
   CurrentAirQuality,
   DayOutlook,
   EmissionImpact,

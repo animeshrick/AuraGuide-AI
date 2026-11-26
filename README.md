@@ -5,8 +5,12 @@ A GenAI assistant that helps families and communities get through severe winter 
 Built for PromptWars Virtual, Challenge 6: Urban Air Quality Assistant (Hack2skill and Google for Developers).
 
 - Live app: https://aura-guide-ai.vercel.app/
-- Demo video: https://www.loom.com/share/f186e4353f2c4f0097723f7946a573ec
+- Demo video: https://www.loom.com/share/c1bbf9c7060f441eb2ebc78daa055cfb
 - Build post: https://www.linkedin.com/feed/update/urn:li:activity:7529590080232042496/
+
+## Chosen vertical
+
+**Challenge 6: Urban Air Quality Assistant.** The persona is an urban Indian household on a smog day, with a mix of members whose needs differ: a commuter, a homemaker, a child on the school run, an elderly parent, a pregnant member, someone with asthma. A second persona is the community organiser (a housing society, school or neighbourhood group) who needs a notice to share.
 
 ## The problem
 
@@ -36,6 +40,22 @@ On a bad smog day people know the air is unhealthy, but they do not know what to
 | Languages | English, Hindi and Bengali, with wording adapted for elders and children |
 | Demo households | One tap loads a sample family so the full flow can be seen in seconds |
 | Model fallback chain | A busy Gemini model is retried, then the next model in the chain is used. If no model answers, the app says so clearly instead of guessing |
+
+## Approach and decision logic
+
+The app decides from the household's own context, not from generic tips. A deterministic engine (`src/domain`) makes every decision that involves a number; Gemini then explains those decisions in plain words.
+
+| Context the person gives | Decision the app makes |
+| --- | --- |
+| Health sensitivities (asthma, infant, pregnancy, elderly, cardiac, outdoor work, smoking) | Weights that member's exposure higher (the highest factor counts, not the sum), so the plan protects them first |
+| How each member travels | Estimates breathing rate and roadside pollution for that mode, and suggests a lower-exposure, lower-emission swap (for example car to metro) |
+| Stays at home (homemaker, work from home) | Counts no commute exposure or emissions, so the plan focuses on indoor air |
+| Usual outdoor activities and their hours | Moves each one to the day's cleanest window when that is cleaner than the usual hour |
+| Cooking fuel, incense or coils, purifier | Adds indoor sources to the exposure estimate and gives matching indoor advice |
+| City | Fetches live hourly air quality and finds the cleanest windows today and the best day in the next three |
+| A what-if question | Recalculates exposure and emissions for the change before Gemini explains it |
+
+If Gemini cannot answer, the app returns a clear error rather than inventing a plan. The engine's numbers are never taken from the model.
 
 ## How GenAI is used
 
@@ -130,6 +150,8 @@ Only `.env.example` is committed. Real keys are never in the repository.
 
 ## Project structure
 
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the layers, the request flow, how Gemini is used and the main design decisions.
+
 ```
 src/
   app/            page, layout and the three API routes
@@ -148,20 +170,25 @@ tests/
 
 | Criterion | How it is addressed | Evidence |
 | --- | --- | --- |
-| Code quality | Strict TypeScript with no `any`, zero ESLint warnings, Prettier, small single-purpose files, one shared route helper for all API routes, shared input limits for the form and the server, doc comments on every exported function and component | `src/lib/api-route.ts`, `src/domain/limits.ts`, `src/components/household/`, `.github/workflows/ci.yml` |
+| Code quality | Strict TypeScript with no `any`; ESLint enforces, in CI, functions of at most 60 lines, complexity of at most 10, nesting depth of at most 3, at most 4 parameters and files of at most 250 lines; a pure engine with no I/O; one shared route helper for all API routes; shared UI building blocks and style constants; input limits shared by the form and the server; doc comments on every function, component and domain type | `ARCHITECTURE.md`, `eslint.config.mjs`, `src/lib/api-route.ts`, `src/domain/limits.ts` |
 | Security | Server-only API key, Zod validation on every route, 32 KB body limit, rate limiting, CSP and other security headers, user text passed to the model as untrusted data, model output never rendered as HTML | `src/lib/http.ts`, `src/ai/sanitize.ts`, `next.config.mjs`, `SECURITY.md` |
 | Efficiency | Air quality and AI responses cached, one model call per plan, structured JSON output, retries with a time budget, no heavy client libraries | `src/lib/cache.ts`, `src/ai/model-chain.ts` |
-| Testing | 490+ unit and component tests (about 98% statement and 92% branch coverage; CI fails below 95% and 88%), plus 37 Playwright end-to-end and accessibility tests | `tests/unit`, `tests/e2e`, `vitest.config.mts` |
-| Accessibility | Semantic HTML, skip link, keyboard-only flow, visible focus, AQI shown with text and not colour alone, three languages, axe checks in unit and end-to-end tests | `src/components`, `tests/unit/helpers/axe.ts`, `tests/e2e` |
+| Testing | 520 unit and component tests (about 98% statement and 92% branch coverage; CI fails below 95% and 88%), plus 37 Playwright end-to-end and accessibility tests | `tests/unit`, `tests/e2e`, `vitest.config.mts` |
+| Accessibility | Semantic HTML, skip link, keyboard-only flow, visible focus (also in Windows high contrast mode), no animation or smooth scrolling when the system asks for reduced motion, AQI shown with text and not colour alone, three languages, axe checks in unit and end-to-end tests | `src/components`, `src/app/globals.css`, `tests/unit/helpers/axe.ts`, `tests/e2e` |
 | Problem statement alignment | Personal hour-by-hour plan from live AQI, safer time windows, a 3-day outlook, low-emission travel swaps, indoor air fixes, air-cleaning plants, going-out advice, what-if questions and a community advisory, with the impact of every choice in numbers | `src/domain`, `src/components/PlanResults.tsx` |
 | Google services | Gemini API through the official `@google/genai` SDK, with structured output and a three-model fallback chain | `src/ai/gemini.ts`, `src/ai/model-chain.ts` |
 
-## Data and method notes
+## Assumptions
 
-- Air quality data comes from Open-Meteo, which is modelled data and can differ from a nearby monitoring station.
-- AQI categories follow India's National AQI bands, calculated in `src/domain` from PM2.5 and PM10.
-- Exposure is an estimate based on pollutant level, time spent and activity level. It is meant for comparing choices, not for medical use.
-- Emission figures use fixed per-kilometre factors listed with their sources in `src/domain/factors.ts`.
+- **Data:** air quality comes from Open-Meteo's forecast model, which can differ from a nearby monitoring station. If it cannot be reached, a typical winter-smog pattern (India Standard Time) is used and clearly labelled as modelled.
+- **AQI:** categories follow India's National AQI bands, calculated from PM2.5 and PM10; the higher sub-index wins.
+- **A fixed daily routine** so the normal and optimised days are compared fairly: commutes at 08:00 and 18:00, commuters away from home 09:00 to 17:00. The values are in `DAY_MODEL` in `src/domain/factors.ts`.
+- **Indoor air:** closed windows let in about 65% of outdoor particles, a HEPA purifier removes about 80%, and biomass cooking and incense add fixed amounts of indoor PM2.5.
+- **Masks:** an everyday N95 is assumed to let through 40% of particles, not the 5% of a lab-fitted mask, so the benefit is not overstated.
+- **Emissions** use fixed per-kilometre factors for Indian transport, with sources listed in `src/domain/factors.ts`.
+- **Health weights** are estimates for comparing choices, not clinical figures.
+- **3-day outlook:** each day is judged on its waking hours (07:00 to 21:00) and needs at least 8 of them to be shown. A daytime average up to AQI 100 is a good day, up to 200 means keep outings short, and above that means stay in where possible.
+- **Privacy:** the household profile is not stored on the server; the browser keeps it only for the current tab.
 - AuraGuide AI gives general guidance. It does not replace advice from a doctor.
 
 ## Built with

@@ -1,6 +1,6 @@
 import { calculateAQI } from "./aqi";
 import { COMMUTE_AMBIENT_FACTOR, INFILTRATION_FACTORS, N95_PENETRATION } from "./factors";
-import { HourlyAirQuality, ScheduleActionType } from "./types";
+import type { HourlyAirQuality, ScheduleActionType } from "./types";
 
 /**
  * Fraction of the outdoor particle level a person still breathes after an
@@ -49,6 +49,7 @@ export function effectiveAQI(
   return scaleAQI(outdoor, factor);
 }
 
+/** The AQI for an hour after its particle levels are multiplied by `factor`. */
 function scaleAQI(entry: HourlyAirQuality, factor: number): number {
   return calculateAQI(entry.pm25 * factor, entry.pm10 * factor).aqi;
 }

@@ -4,7 +4,8 @@ import { LIMITS } from "@/domain/limits";
 import type { CookingFuel } from "@/domain/types";
 import type { Dictionary } from "@/i18n";
 import { CheckboxCard } from "./CheckboxCard";
-import { INPUT_CLASS, LABEL_CLASS } from "./fieldStyles";
+import { TextField } from "./TextField";
+import { FORM_HEADING, FORM_SECTION, INPUT_CLASS, LABEL_CLASS } from "./fieldStyles";
 
 interface HomeSettingsProps {
   uid: string;
@@ -25,28 +26,19 @@ const CityField: React.FC<{
   value: string;
   dict: Dictionary;
   onChange: (city: string) => void;
-}> = ({ id: cityId, value: city, dict, onChange }) => (
-  <div>
-    <label htmlFor={cityId} className={LABEL_CLASS}>
-      {dict.form.city}
-    </label>
-    <input
-      id={cityId}
-      type="text"
-      required
-      minLength={LIMITS.cityMinLength}
-      maxLength={LIMITS.cityMaxLength}
-      autoComplete="address-level2"
-      value={city}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={dict.form.cityPlaceholder}
-      aria-describedby={`${cityId}-hint`}
-      className={`${INPUT_CLASS} px-4 py-2.5 rounded-xl`}
-    />
-    <p id={`${cityId}-hint`} className="text-xs text-slate-600 mt-1">
-      {dict.form.cityHint}
-    </p>
-  </div>
+}> = ({ id, value, dict, onChange }) => (
+  <TextField
+    id={id}
+    label={dict.form.city}
+    value={value}
+    minLength={LIMITS.cityMinLength}
+    maxLength={LIMITS.cityMaxLength}
+    autoComplete="address-level2"
+    placeholder={dict.form.cityPlaceholder}
+    hint={dict.form.cityHint}
+    inputClassName="px-4 py-2.5 rounded-xl"
+    onChange={onChange}
+  />
 );
 
 /** The household's main cooking fuel. */
@@ -95,11 +87,8 @@ export const HomeSettings: React.FC<HomeSettingsProps> = ({
   const fuelId = `${uid}-fuel`;
 
   return (
-    <section
-      aria-labelledby={headingId}
-      className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6"
-    >
-      <h2 id={headingId} className="text-lg font-bold text-slate-900 flex items-center gap-2">
+    <section aria-labelledby={headingId} className={FORM_SECTION}>
+      <h2 id={headingId} className={FORM_HEADING}>
         <MapPin className="w-5 h-5 text-sky-700" aria-hidden="true" />
         {dict.form.baselineHeading}
       </h2>

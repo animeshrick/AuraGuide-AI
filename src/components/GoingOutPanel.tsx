@@ -1,14 +1,8 @@
 import React, { useId, useMemo, useState } from "react";
 import { Clock } from "lucide-react";
 import { formatHour } from "@/domain/labels";
-import {
-  OUTING_DURATIONS,
-  OUTING_MODES,
-  OutingDuration,
-  OutingMode,
-  outingModeFor,
-  planOuting,
-} from "@/domain/outing";
+import type { OutingAdvice, OutingDuration, OutingMode } from "@/domain/outing";
+import { OUTING_DURATIONS, OUTING_MODES, outingModeFor, planOuting } from "@/domain/outing";
 import type { HourlyAirQuality, HouseholdProfile } from "@/domain/types";
 import type { Dictionary } from "@/i18n";
 import { LabelledSelect } from "./LabelledSelect";
@@ -27,6 +21,19 @@ const HOUR_OPTIONS = Array.from({ length: 24 }, (_, hour) => ({
   value: hour,
   label: formatHour(hour),
 }));
+
+/** The advice for the chosen trip, or a note when there is no air data for that hour. */
+const OutingResult: React.FC<{
+  advice: OutingAdvice | null;
+  memberName: string;
+  hour: number;
+  dict: Dictionary;
+}> = ({ advice, memberName, hour, dict }) =>
+  advice ? (
+    <OutingAdviceView advice={advice} memberName={memberName} time={formatHour(hour)} dict={dict} />
+  ) : (
+    <p className={NOTICE}>{dict.outing.noData}</p>
+  );
 
 /**
  * "I have to go out at this time." Live, with no submit button: the person, the hour, the length
@@ -91,16 +98,7 @@ export const GoingOutPanel: React.FC<GoingOutPanelProps> = ({ profile, hourly, d
       </div>
 
       <div aria-live="polite" aria-atomic="true" className="space-y-4">
-        {advice ? (
-          <OutingAdviceView
-            advice={advice}
-            memberName={member.name}
-            time={formatHour(hour)}
-            dict={dict}
-          />
-        ) : (
-          <p className={NOTICE}>{t.noData}</p>
-        )}
+        <OutingResult advice={advice} memberName={member.name} hour={hour} dict={dict} />
       </div>
     </section>
   );

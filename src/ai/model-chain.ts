@@ -49,6 +49,7 @@ function isTransient(err: unknown): boolean {
   return err instanceof Error && /high demand|UNAVAILABLE|overloaded/i.test(err.message);
 }
 
+/** Wait for `ms` milliseconds. */
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 /**
@@ -60,25 +61,44 @@ export async function runWithFallback<T>(
   label: string,
   run: (model: string) => Promise<T>
 ): Promise<T> {
-  const started = Date.now();
+  const deadline = Date.now() + TOTAL_BUDGET_MS;
   let lastError: unknown = new GeminiUnavailableError("unknown", "no model was tried");
-
   for (const model of getModelChain()) {
-    for (let attempt = 0; attempt <= TRANSIENT_RETRIES; attempt++) {
-      if (Date.now() - started > TOTAL_BUDGET_MS) throw logFailure(label, lastError);
-      try {
-        return await run(model);
-      } catch (err) {
-        lastError = err;
-        const reason = classifyGeminiError(err);
-        console.error(`[gemini] ${label} model=${model} attempt=${attempt + 1} failed (${reason})`);
-        if (reason === "invalid_key" || reason === "missing_key") throw logFailure(label, err);
-        if (!isTransient(err) || attempt === TRANSIENT_RETRIES) break;
-        await sleep(retryDelayMs(attempt));
-      }
-    }
+    const outcome = await tryModel(label, model, run, deadline);
+    if (outcome.ok) return outcome.value;
+    lastError = outcome.error;
   }
   throw logFailure(label, lastError);
+}
+
+type ModelOutcome<T> = { ok: true; value: T } | { ok: false; error: unknown };
+
+/**
+ * Run one model, retrying busy answers. Returns the error to move on to the next
+ * model; throws at once for a bad or missing key, or when the time budget is spent.
+ */
+async function tryModel<T>(
+  label: string,
+  model: string,
+  run: (model: string) => Promise<T>,
+  deadline: number
+): Promise<ModelOutcome<T>> {
+  let error: unknown;
+  for (let attempt = 0; attempt <= TRANSIENT_RETRIES; attempt++) {
+    if (Date.now() > deadline)
+      throw logFailure(label, error ?? new GeminiUnavailableError("timeout"));
+    try {
+      return { ok: true, value: await run(model) };
+    } catch (err) {
+      error = err;
+      const reason = classifyGeminiError(err);
+      console.error(`[gemini] ${label} model=${model} attempt=${attempt + 1} failed (${reason})`);
+      if (reason === "invalid_key" || reason === "missing_key") throw logFailure(label, err);
+      if (!isTransient(err) || attempt === TRANSIENT_RETRIES) break;
+      await sleep(retryDelayMs(attempt));
+    }
+  }
+  return { ok: false, error };
 }
 
 /** Log the reason and a short message. Never log prompts, keys or household details. */

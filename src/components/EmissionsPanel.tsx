@@ -1,10 +1,11 @@
 import React, { useId } from "react";
 import { Leaf } from "lucide-react";
-import { EmissionImpact } from "@/domain/types";
-import { Dictionary, formatMessage } from "@/i18n";
+import type { EmissionImpact } from "@/domain/types";
+import type { Dictionary } from "@/i18n";
+import { formatMessage } from "@/i18n";
 import { formatKg } from "@/lib/format";
 import { SectionHeader } from "./SectionHeader";
-import { CARD, MUTED } from "./styles";
+import { CARD, MUTED, STAT_BOX } from "./styles";
 
 interface EmissionsPanelProps {
   impact: EmissionImpact;
@@ -25,13 +26,13 @@ export const EmissionsPanel: React.FC<EmissionsPanelProps> = ({ impact, dict }) 
       />
 
       <dl className="grid grid-cols-3 gap-3 text-center">
-        <div className="rounded-xl bg-slate-50 border border-slate-200 p-3">
+        <div className={STAT_BOX}>
           <dt className="text-xs font-semibold text-slate-700">{dict.results.emissionsBaseline}</dt>
           <dd className="mt-1 font-mono font-bold text-slate-900">
             {formatMessage(dict.results.kgPerDay, { kg: formatKg(impact.baselineEmissionsKg) })}
           </dd>
         </div>
-        <div className="rounded-xl bg-slate-50 border border-slate-200 p-3">
+        <div className={STAT_BOX}>
           <dt className="text-xs font-semibold text-slate-700">
             {dict.results.emissionsOptimized}
           </dt>

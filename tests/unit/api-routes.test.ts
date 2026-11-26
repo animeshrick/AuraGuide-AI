@@ -1,9 +1,10 @@
 import { NextRequest } from "next/server";
-import { DailyPlanResponseSchema } from "@/ai/schemas";
+import { DailyPlanResponseSchema } from "@/ai/plan-schema";
 import { makePlan } from "./helpers/plan";
 import { computeEngineFacts } from "@/domain/engine";
 import { resetRateLimits } from "@/lib/rate-limiter";
 import { makeAirQuality, makeProfile } from "./helpers/fixtures";
+import type * as GeminiModule from "@/ai/gemini";
 
 const mocks = vi.hoisted(() => ({
   resolveAirQuality: vi.fn(),
@@ -14,7 +15,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/air-quality-service", () => ({ resolveAirQuality: mocks.resolveAirQuality }));
 vi.mock("@/ai/gemini", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/ai/gemini")>()),
+  ...(await importOriginal<typeof GeminiModule>()),
   generateOptimizedPlanWithGemini: mocks.generatePlan,
   generateWhatIfAnswerWithGemini: mocks.generateWhatIf,
   generateCommunityAdvisoryWithGemini: mocks.generateAdvisory,

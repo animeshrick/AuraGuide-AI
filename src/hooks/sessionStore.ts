@@ -1,6 +1,7 @@
 import { HouseholdProfileSchema } from "@/ai/schemas";
 import type { HouseholdProfile } from "@/domain/types";
-import { isSupportedLanguage, SupportedLanguage } from "@/i18n";
+import type { SupportedLanguage } from "@/i18n";
+import { isSupportedLanguage } from "@/i18n";
 
 const PROFILE_KEY = "auraguide:profile";
 const LANGUAGE_KEY = "auraguide:language";

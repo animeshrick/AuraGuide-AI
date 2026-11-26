@@ -92,7 +92,10 @@ describe("homemaker in what-if questions", () => {
         makeMember({ id: "h", name: "Meena", commuteMode: "homemaker", commuteDistanceKm: 0 }),
       ],
     });
-    const outcome = runWhatIf(family, makeHourly(6), "What if I take the metro?", "h");
+    const outcome = runWhatIf(family, makeHourly(6), {
+      question: "What if I take the metro?",
+      memberId: "h",
+    });
     expect(outcome).toMatchObject({ matched: false, reason: "no_commute" });
   });
 });

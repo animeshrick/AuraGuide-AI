@@ -1,5 +1,5 @@
 import { finalizeGeminiPlan } from "@/ai/gemini";
-import type { GeminiPlanOutput } from "@/ai/schemas";
+import type { GeminiPlanOutput } from "@/ai/gemini-schema";
 import { computeEngineFacts } from "@/domain/engine";
 import type { CurrentAirQuality, DailyPlanResponse, HouseholdProfile } from "@/domain/types";
 import { makeAirQuality, makeProfile } from "./fixtures";

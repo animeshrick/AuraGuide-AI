@@ -3,6 +3,7 @@ import { checkRateLimit } from "./rate-limiter";
 
 const MAX_BODY_BYTES = 32 * 1024;
 
+/** Machine-readable error codes the API routes return. */
 type ApiErrorCode =
   | "rate_limited"
   | "invalid_json"
@@ -24,10 +25,9 @@ export function apiError(
   code: ApiErrorCode,
   message: string,
   status: number,
-  extra: Record<string, unknown> = {},
-  headers?: HeadersInit
+  options: { extra?: Record<string, unknown>; headers?: HeadersInit } = {}
 ): NextResponse {
-  return apiJson({ error: message, code, ...extra }, { status, headers });
+  return apiJson({ error: message, code, ...options.extra }, { status, headers: options.headers });
 }
 
 /**
@@ -44,13 +44,9 @@ export function getClientId(req: Request): string {
 export function enforceRateLimit(req: Request): NextResponse | null {
   const result = checkRateLimit(getClientId(req));
   if (result.success) return null;
-  return apiError(
-    "rate_limited",
-    "Too many requests. Please wait a moment and try again.",
-    429,
-    {},
-    { "Retry-After": String(Math.max(1, Math.ceil(result.resetMs / 1000))) }
-  );
+  return apiError("rate_limited", "Too many requests. Please wait a moment and try again.", 429, {
+    headers: { "Retry-After": String(Math.max(1, Math.ceil(result.resetMs / 1000))) },
+  });
 }
 
 type JsonBodyResult = { ok: true; data: unknown } | { ok: false; response: NextResponse };

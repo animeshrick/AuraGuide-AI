@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
+import type { NextResponse } from "next/server";
+import type { z } from "zod";
 import { GeminiUnavailableError } from "@/ai/gemini";
 import { apiError, enforceRateLimit, readJsonBody } from "./http";
 import { validatePayload } from "./validation";
@@ -32,7 +32,7 @@ export function createJsonRoute<S extends z.ZodType>(options: JsonRouteOptions<S
     const validation = validatePayload(options.schema, body.data);
     if (!validation.success) {
       return apiError("invalid_request", options.invalidMessage, 400, {
-        details: validation.errors,
+        extra: { details: validation.errors },
       });
     }
 

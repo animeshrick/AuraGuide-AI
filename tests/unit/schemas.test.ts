@@ -1,10 +1,5 @@
-import {
-  AdvisoryRequestSchema,
-  GEMINI_PLAN_RESPONSE_SCHEMA,
-  GeminiPlanOutputSchema,
-  HouseholdProfileSchema,
-  WhatIfRequestSchema,
-} from "@/ai/schemas";
+import { GEMINI_PLAN_RESPONSE_SCHEMA, GeminiPlanOutputSchema } from "@/ai/gemini-schema";
+import { AdvisoryRequestSchema, HouseholdProfileSchema, WhatIfRequestSchema } from "@/ai/schemas";
 import { validatePayload } from "@/lib/validation";
 import { makeMember, makeProfile } from "./helpers/fixtures";
 

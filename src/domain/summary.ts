@@ -1,4 +1,4 @@
-import { DailyPlanResponse, PlanSummary } from "./types";
+import type { DailyPlanResponse, PlanSummary } from "./types";
 
 /** Household-level headline numbers, derived only from the engine's per-member results. */
 export function summarizePlan(

@@ -1,10 +1,11 @@
 import React, { useId } from "react";
 import { Users } from "lucide-react";
-import { MemberExposureImpact } from "@/domain/types";
-import { Dictionary, formatMessage } from "@/i18n";
+import type { MemberExposureImpact } from "@/domain/types";
+import type { Dictionary } from "@/i18n";
+import { formatMessage } from "@/i18n";
 import { formatDose } from "@/lib/format";
 import { SectionHeader } from "./SectionHeader";
-import { CARD } from "./styles";
+import { CARD, SUB_CARD } from "./styles";
 
 interface MemberImpactCardsProps {
   impacts: MemberExposureImpact[];
@@ -24,10 +25,7 @@ export const MemberImpactCards: React.FC<MemberImpactCardsProps> = ({ impacts, d
         {impacts.map((m) => {
           const pct = Math.max(0, Math.min(100, Math.round(m.exposureAvoidedPercentage)));
           return (
-            <li
-              key={m.memberId}
-              className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-3"
-            >
+            <li key={m.memberId} className={SUB_CARD}>
               <div className="flex items-baseline justify-between gap-3">
                 <h3 className="font-bold text-slate-900 break-words">{m.memberName}</h3>
                 <p className="text-sm font-bold text-emerald-900 whitespace-nowrap">

@@ -1,7 +1,8 @@
 import React from "react";
 import { Lightbulb } from "lucide-react";
-import { DailyPlanResponse, HouseholdProfile } from "@/domain/types";
-import { Dictionary, formatMessage, SupportedLanguage } from "@/i18n";
+import type { DailyPlanResponse, HouseholdProfile } from "@/domain/types";
+import type { Dictionary, SupportedLanguage } from "@/i18n";
+import { formatMessage } from "@/i18n";
 import { BeforeAfterTimeline } from "./BeforeAfterTimeline";
 import { CommunityAdvisory } from "./CommunityAdvisory";
 import { EmissionsPanel } from "./EmissionsPanel";

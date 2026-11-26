@@ -8,6 +8,8 @@ export default defineConfig({
     globals: true,
     environment: "node",
     include: ["tests/unit/**/*.test.{ts,tsx}"],
+    // Component tests that click through long forms need more than the 5 second default on slow CI runners.
+    testTimeout: 20_000,
     coverage: {
       provider: "v8",
       reporter: ["text", "json-summary", "html"],

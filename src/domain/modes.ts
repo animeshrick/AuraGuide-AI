@@ -1,4 +1,4 @@
-import { CommuteMode } from "./types";
+import type { CommuteMode } from "./types";
 
 /**
  * Modes where the person does not travel to a workplace or school, so they

@@ -1,10 +1,10 @@
 import { aqiCache } from "@/lib/cache";
+import type { OpenMeteoAirQualityResponse } from "@/lib/open-meteo";
 import {
   buildAirQuality,
   buildModelledAirQuality,
   fetchAirQuality,
   geocodeCity,
-  OpenMeteoAirQualityResponse,
 } from "@/lib/open-meteo";
 
 const HOUR_MS = 3_600_000;
@@ -40,9 +40,7 @@ describe("buildAirQuality", () => {
     const time = localTimes(96);
     const aq = buildAirQuality(
       makeResponse({ time, pm2_5: time.map(() => 80), pm10: time.map(() => 120) }),
-      "Delhi",
-      0,
-      0,
+      { name: "Delhi", latitude: 0, longitude: 0 },
       NOW_UTC
     );
     expect(aq?.hourly).toHaveLength(24);
@@ -51,7 +49,11 @@ describe("buildAirQuality", () => {
   });
 
   it("starts at the current hour in the city's own time zone", () => {
-    const aq = buildAirQuality(makeResponse(), "Delhi", 28.6, 77.2, NOW_UTC);
+    const aq = buildAirQuality(
+      makeResponse(),
+      { name: "Delhi", latitude: 28.6, longitude: 77.2 },
+      NOW_UTC
+    );
     expect(aq).not.toBeNull();
     expect(aq!.hourly[0].time).toBe("2026-11-19T18:00");
     expect(aq!.hourly[0].hour).toBe(18);
@@ -60,7 +62,11 @@ describe("buildAirQuality", () => {
 
   it("gives a different start hour for a different offset, whatever the server's time zone", () => {
     // The same instant is 07:50 in New York (UTC-5).
-    const aq = buildAirQuality(makeResponse({}, -18_000), "New York", 40.7, -74, NOW_UTC);
+    const aq = buildAirQuality(
+      makeResponse({}, -18_000),
+      { name: "New York", latitude: 40.7, longitude: -74 },
+      NOW_UTC
+    );
     expect(aq!.hourly[0].time).toBe("2026-11-19T07:00");
     expect(aq!.hourly[0].hour).toBe(7);
   });
@@ -69,9 +75,7 @@ describe("buildAirQuality", () => {
     const time = localTimes(48);
     const aq = buildAirQuality(
       makeResponse({ pm2_5: time.map(() => 60), pm10: time.map(() => 0) }),
-      "Delhi",
-      0,
-      0,
+      { name: "Delhi", latitude: 0, longitude: 0 },
       NOW_UTC
     );
     expect(aq!.aqi).toBe(100);
@@ -84,7 +88,11 @@ describe("buildAirQuality", () => {
     const time = localTimes(48);
     const pm25 = time.map((t) => (t >= "2026-11-19T20:00" && t <= "2026-11-19T22:00" ? null : 80));
     const pm10 = time.map((t) => (t >= "2026-11-19T20:00" && t <= "2026-11-19T22:00" ? null : 120));
-    const aq = buildAirQuality(makeResponse({ pm2_5: pm25, pm10 }), "Delhi", 0, 0, NOW_UTC);
+    const aq = buildAirQuality(
+      makeResponse({ pm2_5: pm25, pm10 }),
+      { name: "Delhi", latitude: 0, longitude: 0 },
+      NOW_UTC
+    );
 
     const times = aq!.hourly.map((h) => h.time);
     expect(times).not.toContain("2026-11-19T20:00");
@@ -97,9 +105,7 @@ describe("buildAirQuality", () => {
     const time = localTimes(48);
     const aq = buildAirQuality(
       makeResponse({ pm10: time.map(() => null), pm2_5: time.map(() => 100) }),
-      "Delhi",
-      0,
-      0,
+      { name: "Delhi", latitude: 0, longitude: 0 },
       NOW_UTC
     );
     expect(aq).not.toBeNull();
@@ -109,20 +115,26 @@ describe("buildAirQuality", () => {
   it("returns null when there is too little usable data", () => {
     const time = localTimes(48);
     const allNull = makeResponse({ pm2_5: time.map(() => null), pm10: time.map(() => null) });
-    expect(buildAirQuality(allNull, "Delhi", 0, 0, NOW_UTC)).toBeNull();
+    expect(
+      buildAirQuality(allNull, { name: "Delhi", latitude: 0, longitude: 0 }, NOW_UTC)
+    ).toBeNull();
 
     // The data ends at 03:00 the next morning, so only 10 hours remain from 18:00.
     const short: OpenMeteoAirQualityResponse = {
       utc_offset_seconds: 19_800,
       hourly: { time: localTimes(28), pm2_5: Array(28).fill(80), pm10: Array(28).fill(80) },
     };
-    expect(buildAirQuality(short, "Delhi", 0, 0, NOW_UTC)).toBeNull();
+    expect(
+      buildAirQuality(short, { name: "Delhi", latitude: 0, longitude: 0 }, NOW_UTC)
+    ).toBeNull();
   });
 
   it("returns null when the forecast is entirely in the past or empty", () => {
     const old = makeResponse();
-    expect(buildAirQuality(old, "Delhi", 0, 0, Date.UTC(2026, 11, 30))).toBeNull();
-    expect(buildAirQuality({}, "Delhi", 0, 0, NOW_UTC)).toBeNull();
+    expect(
+      buildAirQuality(old, { name: "Delhi", latitude: 0, longitude: 0 }, Date.UTC(2026, 11, 30))
+    ).toBeNull();
+    expect(buildAirQuality({}, { name: "Delhi", latitude: 0, longitude: 0 }, NOW_UTC)).toBeNull();
   });
 });
 

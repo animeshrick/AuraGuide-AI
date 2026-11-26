@@ -1,4 +1,4 @@
-import { AQICategory } from "./types";
+import type { AQICategory } from "./types";
 
 interface Breakpoint {
   bLo: number;

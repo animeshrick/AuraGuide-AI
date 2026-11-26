@@ -1,6 +1,7 @@
 import React from "react";
 import { Sparkles } from "lucide-react";
-import { DEMO_HOUSEHOLDS, DemoHousehold } from "@/domain/demo-households";
+import type { DemoHousehold } from "@/domain/demo-households";
+import { DEMO_HOUSEHOLDS } from "@/domain/demo-households";
 import type { Dictionary } from "@/i18n";
 
 interface DemoPickerProps {

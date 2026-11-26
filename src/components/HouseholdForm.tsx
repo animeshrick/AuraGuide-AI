@@ -4,11 +4,14 @@ import React, { useId } from "react";
 import { ArrowRight, Plus, Users } from "lucide-react";
 import { LIMITS } from "@/domain/limits";
 import type { HouseholdMember, HouseholdProfile } from "@/domain/types";
-import { Dictionary, getDictionary, SupportedLanguage } from "@/i18n";
+import type { Dictionary, SupportedLanguage } from "@/i18n";
+import { getDictionary } from "@/i18n";
 import { DemoPicker } from "./household/DemoPicker";
 import { HomeSettings } from "./household/HomeSettings";
 import { MemberCard } from "./household/MemberCard";
-import { MemberActions, useHouseholdForm } from "./household/useHouseholdForm";
+import type { MemberActions } from "./household/useHouseholdForm";
+import { useHouseholdForm } from "./household/useHouseholdForm";
+import { FORM_HEADING, FORM_SECTION } from "./household/fieldStyles";
 
 interface HouseholdFormProps {
   language: SupportedLanguage;
@@ -55,16 +58,10 @@ const MembersSection: React.FC<{
 }> = ({ uid, members, version, dict, onAdd, actions }) => {
   const atMemberLimit = members.length >= LIMITS.maxMembers;
   return (
-    <section
-      aria-labelledby={`${uid}-members`}
-      className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6"
-    >
+    <section aria-labelledby={`${uid}-members`} className={FORM_SECTION}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2
-            id={`${uid}-members`}
-            className="text-lg font-bold text-slate-900 flex items-center gap-2"
-          >
+          <h2 id={`${uid}-members`} className={FORM_HEADING}>
             <Users className="w-5 h-5 text-sky-700" aria-hidden="true" />
             {dict.form.members} ({members.length})
           </h2>

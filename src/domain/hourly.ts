@@ -1,4 +1,4 @@
-import { HourlyAirQuality } from "./types";
+import type { HourlyAirQuality } from "./types";
 
 /**
  * Index a rolling 24-hour forecast by local hour of day. If an hour appears

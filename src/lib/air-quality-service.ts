@@ -1,4 +1,4 @@
-import { CurrentAirQuality } from "@/domain/types";
+import type { CurrentAirQuality } from "@/domain/types";
 import { buildModelledAirQuality, fetchAirQuality, geocodeCity } from "./open-meteo";
 
 type AirQualityLookup =

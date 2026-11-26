@@ -2,8 +2,8 @@ import React, { useId } from "react";
 import { BarChart3 } from "lucide-react";
 import { getAQIColor } from "@/domain/aqi";
 import { formatHour } from "@/domain/labels";
-import { HourlyAirQuality } from "@/domain/types";
-import { Dictionary } from "@/i18n";
+import type { HourlyAirQuality } from "@/domain/types";
+import type { Dictionary } from "@/i18n";
 import { SectionHeader } from "./SectionHeader";
 import { CARD } from "./styles";
 

@@ -1,5 +1,6 @@
 import React from "react";
-import { ADVISORY_AUDIENCES, AdvisoryAudience } from "@/domain/types";
+import type { AdvisoryAudience } from "@/domain/types";
+import { ADVISORY_AUDIENCES } from "@/domain/types";
 import type { Dictionary } from "@/i18n";
 
 interface AudiencePickerProps {

@@ -1,5 +1,5 @@
 import React from "react";
-import { Dictionary } from "@/i18n";
+import type { Dictionary } from "@/i18n";
 
 /** Page footer: a health disclaimer, how the numbers are worked out, and the data credit. */
 export const Footer: React.FC<{ dict: Dictionary }> = ({ dict }) => (

@@ -1,8 +1,11 @@
+/** The six bands of India's National Air Quality Index, cleanest first. */
 export type AQICategory = "Good" | "Satisfactory" | "Moderate" | "Poor" | "Very Poor" | "Severe";
 
+/** A reason a person is harmed more by dirty air. "none" is the form's explicit empty choice. */
 export type HealthSensitivity =
   "asthma" | "pregnant" | "infant" | "elderly" | "outdoor_worker" | "cardiac" | "none";
 
+/** How a person travels to work or school. The last two mean no daily commute. */
 export type CommuteMode =
   | "walk"
   | "bicycle"
@@ -15,16 +18,20 @@ export type CommuteMode =
   | "work_from_home"
   | "homemaker";
 
+/** What the household cooks on. Biomass (wood, dung, crop waste) adds smoke indoors. */
 export type CookingFuel = "lpg" | "biomass" | "electric";
 
+/** Languages the plan can be written in: English, Hindi and Bengali. */
 export type SupportedLanguageCode = "en" | "hi" | "bn";
 
+/** Something a person regularly does outside, such as a morning walk. */
 export interface OutdoorActivity {
   description: string;
   preferredHour: number; // 0 - 23
   durationMinutes: number;
 }
 
+/** One person in the household, with the habits and health details the engine needs. */
 export interface HouseholdMember {
   id: string;
   name: string;
@@ -38,6 +45,7 @@ export interface HouseholdMember {
   outdoorActivities: OutdoorActivity[];
 }
 
+/** Everything the household form collects. This is the body of a plan request. */
 export interface HouseholdProfile {
   city: string;
   coordinates?: {
@@ -51,6 +59,7 @@ export interface HouseholdProfile {
   language?: SupportedLanguageCode;
 }
 
+/** Air quality for one hour at one place. */
 export interface HourlyAirQuality {
   time: string; // local ISO string without offset, e.g. 2026-11-19T18:00
   hour: number; // 0 - 23, local hour of day
@@ -63,6 +72,7 @@ export interface HourlyAirQuality {
 /** "open-meteo" is live modelled data. "modelled" is the built-in typical winter pattern used when the data source is unreachable. */
 export type AirQualitySource = "open-meteo" | "modelled";
 
+/** Air quality for a place right now, with the hours ahead. Used on the server only. */
 export interface CurrentAirQuality {
   city: string;
   latitude: number;
@@ -80,6 +90,7 @@ export interface CurrentAirQuality {
   forecastHours?: HourlyAirQuality[];
 }
 
+/** The part of the air quality data that is sent to the browser with a plan. */
 export interface PlanAirQuality {
   source: AirQualitySource;
   updatedAt: string;
@@ -89,6 +100,7 @@ export interface PlanAirQuality {
   hourly: HourlyAirQuality[];
 }
 
+/** The cleanest stretch of the day for one kind of activity. */
 export interface SafeWindow {
   activity: "school_run" | "exercise" | "ventilation" | "general_outdoor";
   startHour: number; // 0 - 23
@@ -98,6 +110,7 @@ export interface SafeWindow {
   recommendation: string;
 }
 
+/** How much less dirty air one person breathes when the plan is followed. */
 export interface MemberExposureImpact {
   memberId: string;
   memberName: string;
@@ -109,6 +122,7 @@ export interface MemberExposureImpact {
   keyChanges: string[];
 }
 
+/** Daily commute CO2 for the household, before and after the suggested mode swaps. */
 export interface EmissionImpact {
   baselineEmissionsKg: number;
   optimizedEmissionsKg: number;
@@ -120,9 +134,11 @@ export interface EmissionImpact {
   }[];
 }
 
+/** The kind of change a schedule step makes. It decides how the step's "after" AQI is worked out. */
 export type ScheduleActionType =
   "schedule_shift" | "mode_swap" | "indoor_protection" | "purifier_timing";
 
+/** One step of the day: what the household does now, what to do instead, and why. */
 export interface ScheduleItem {
   hour: number;
   timeLabel: string;
@@ -135,6 +151,7 @@ export interface ScheduleItem {
   actionType: ScheduleActionType;
 }
 
+/** Advice for the air inside the home, written by Gemini. */
 export interface IndoorAirAdvice {
   cookingAdvice: string;
   ventilationWindow: string;
@@ -151,6 +168,7 @@ export type AdvisoryAudience = (typeof ADVISORY_AUDIENCES)[number];
 /** good: a fine day to be outside; careful: keep outings short; avoid: stay in where possible. */
 export type OutlookLevel = "good" | "careful" | "avoid";
 
+/** One day of the 3-day outlook. */
 export interface DayOutlook {
   /** Local date, for example "2026-11-23". */
   date: string;
@@ -166,6 +184,7 @@ export interface DayOutlook {
   isBestDay: boolean;
 }
 
+/** The full answer of the plan route: engine numbers with Gemini's wording. */
 export interface DailyPlanResponse {
   city: string;
   currentAQI: number;
@@ -182,6 +201,7 @@ export interface DailyPlanResponse {
   outlook: DayOutlook[];
 }
 
+/** Household totals shown at the top of the results. */
 export interface PlanSummary {
   householdExposureAvoidedPct: number;
   baselineDoseTotal: number;
@@ -191,8 +211,10 @@ export interface PlanSummary {
   emissionsSavedPct: number;
 }
 
+/** Why a what-if question could not be answered. */
 type WhatIfReason = "no_mode" | "same_mode" | "no_commute";
 
+/** The engine's answer to a what-if question: the recalculated numbers, or the reason there are none. */
 export type WhatIfOutcome =
   | {
       matched: false;

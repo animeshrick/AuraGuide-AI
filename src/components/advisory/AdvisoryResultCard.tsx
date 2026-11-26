@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { Check, Copy, Share2 } from "lucide-react";
-import { Dictionary, formatMessage } from "@/i18n";
+import type { Dictionary } from "@/i18n";
+import { formatMessage } from "@/i18n";
 import type { AdvisoryResult } from "@/lib/api-client";
+import { SUB_CARD } from "../styles";
 
 interface AdvisoryResultCardProps {
   result: AdvisoryResult;
@@ -22,7 +24,7 @@ export const AdvisoryResultCard: React.FC<AdvisoryResultCardProps> = ({ result, 
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
+    <div className={SUB_CARD}>
       <h3 className="font-bold text-slate-900">
         {formatMessage(dict.advisory.resultFor, {
           audience: dict.advisory.audiences[result.audience],

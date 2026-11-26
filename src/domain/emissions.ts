@@ -1,6 +1,6 @@
 import { EMISSION_FACTORS_KG_PER_KM } from "./factors";
 import { staysAtHome } from "./modes";
-import { CommuteMode, EmissionImpact, HouseholdProfile } from "./types";
+import type { CommuteMode, EmissionImpact, HouseholdProfile } from "./types";
 
 /** Emissions for one person's daily round trip (2 x one-way distance), unrounded. */
 export function dailyCommuteEmissionsKg(oneWayDistanceKm: number, mode: CommuteMode): number {

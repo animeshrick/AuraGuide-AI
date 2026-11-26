@@ -3,9 +3,10 @@ import { CalendarDays, OctagonAlert, ShieldAlert, ShieldCheck, Star } from "luci
 import type { LucideIcon } from "lucide-react";
 import { formatHourRange } from "@/domain/labels";
 import type { DayOutlook, OutlookLevel } from "@/domain/types";
-import { Dictionary, formatMessage, SupportedLanguage } from "@/i18n";
+import type { Dictionary, SupportedLanguage } from "@/i18n";
+import { formatMessage } from "@/i18n";
 import { formatDayLabel } from "@/lib/dates";
-import { AQIBadge } from "./AQIBadge";
+import { LocalizedAQIBadge } from "./AQIBadge";
 import { SectionHeader } from "./SectionHeader";
 import { CARD, MUTED } from "./styles";
 
@@ -47,13 +48,7 @@ const DayCard: React.FC<{ day: DayOutlook; language: SupportedLanguage; dict: Di
       </div>
       <p className="flex flex-wrap items-center gap-2 text-sm text-slate-800">
         {t.daytimeAir}
-        <AQIBadge
-          aqi={day.averageAQI}
-          category={day.category}
-          categoryLabel={dict.categories[day.category]}
-          aqiLabel={dict.metrics.aqiLabel}
-          size="md"
-        />
+        <LocalizedAQIBadge aqi={day.averageAQI} category={day.category} dict={dict} size="md" />
       </p>
       <p className={`flex items-center gap-2 text-base font-semibold ${look.text}`}>
         <look.Icon className="w-5 h-5 shrink-0" aria-hidden="true" />

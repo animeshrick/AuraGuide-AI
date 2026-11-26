@@ -1,9 +1,10 @@
 import React, { useId, useMemo } from "react";
 import { Info, Moon, ShieldAlert, ShieldCheck, Sprout, Sun, SunDim } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { PlantLight, suggestPlants } from "@/domain/plants";
-import { HouseholdProfile } from "@/domain/types";
-import { Dictionary } from "@/i18n";
+import type { PlantLight } from "@/domain/plants";
+import { suggestPlants } from "@/domain/plants";
+import type { HouseholdProfile } from "@/domain/types";
+import type { Dictionary } from "@/i18n";
 import { SectionHeader } from "./SectionHeader";
 import { CARD } from "./styles";
 
