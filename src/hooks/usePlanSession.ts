@@ -9,11 +9,36 @@ import { useLatestRequest } from "./useLatestRequest";
 
 type RequestMode = "submit" | "language";
 
+/** What `useStoredHousehold` returns. */
+interface StoredHousehold {
+  profile: HouseholdProfile | null;
+  formKey: number;
+  save: (next: HouseholdProfile) => void;
+  remountForm: () => void;
+}
+
+/** What `usePlanSession` returns: everything the page reads and every action it can take. */
+export interface PlanSession {
+  language: SupportedLanguage;
+  profile: HouseholdProfile | null;
+  plan: DailyPlanResponse | null;
+  isLoading: boolean;
+  isUpdatingLanguage: boolean;
+  error: ClientErrorCode | null;
+  formKey: number;
+  /** Goes up by one each time a submitted plan arrives, so the page can move focus to it. */
+  planArrived: number;
+  submit: (submitted: HouseholdProfile) => void;
+  changeLanguage: (next: SupportedLanguage) => void;
+  reset: () => void;
+  clearError: () => void;
+}
+
 /**
  * The submitted household, restored for this browser tab after the page loads.
  * `formKey` changes to remount the form so it starts from the current household.
  */
-function useStoredHousehold() {
+function useStoredHousehold(): StoredHousehold {
   const [profile, setProfile] = useState<HouseholdProfile | null>(null);
   const [formKey, setFormKey] = useState(0);
 
@@ -40,7 +65,7 @@ function useStoredHousehold() {
  * Submitting asks for a plan; switching language asks for the same plan in
  * the new language. Only the newest request may change the screen.
  */
-export function usePlanSession() {
+export function usePlanSession(): PlanSession {
   const { language, latest: latestLanguage, choose: chooseLanguage } = useLanguage();
   const [plan, setPlan] = useState<DailyPlanResponse | null>(null);
   const [busy, setBusy] = useState<RequestMode | null>(null);
@@ -50,7 +75,7 @@ export function usePlanSession() {
   const request = useLatestRequest();
 
   const generate = useCallback(
-    async (target: HouseholdProfile, lang: SupportedLanguage, mode: RequestMode) => {
+    async (target: HouseholdProfile, lang: SupportedLanguage, mode: RequestMode): Promise<void> => {
       const controller = request.start();
       setError(null);
       setBusy(mode);
@@ -81,7 +106,6 @@ export function usePlanSession() {
     isUpdatingLanguage: busy === "language",
     error,
     formKey: household.formKey,
-    /** Goes up by one each time a submitted plan arrives, so the page can move focus to it. */
     planArrived,
     submit: (submitted: HouseholdProfile) => {
       const next = { ...submitted, language };

@@ -1,6 +1,10 @@
 import type { CurrentAirQuality } from "@/domain/types";
 import { buildModelledAirQuality, fetchAirQuality, geocodeCity } from "./open-meteo";
 
+/** Coordinates used with the modelled pattern when the geocoder cannot be reached. */
+const UNKNOWN_LOCATION = { latitude: 0, longitude: 0 };
+
+/** Air quality for the city, or the reason there is none. */
 type AirQualityLookup =
   { ok: true; airQuality: CurrentAirQuality } | { ok: false; reason: "city_not_found" };
 
@@ -17,20 +21,21 @@ export async function resolveAirQuality(
   coordinates?: { latitude: number; longitude: number }
 ): Promise<AirQualityLookup> {
   if (coordinates) {
-    return {
-      ok: true,
-      airQuality: await fetchAirQuality(coordinates.latitude, coordinates.longitude, city),
-    };
+    return { ok: true, airQuality: await fetchAirQuality({ name: city, ...coordinates }) };
   }
 
   const geo = await geocodeCity(city);
   if (geo.status === "not_found") return { ok: false, reason: "city_not_found" };
   if (geo.status === "unavailable") {
-    return { ok: true, airQuality: buildModelledAirQuality(city, 0, 0) };
+    return { ok: true, airQuality: buildModelledAirQuality({ name: city, ...UNKNOWN_LOCATION }) };
   }
 
   return {
     ok: true,
-    airQuality: await fetchAirQuality(geo.latitude, geo.longitude, geo.name),
+    airQuality: await fetchAirQuality({
+      name: geo.name,
+      latitude: geo.latitude,
+      longitude: geo.longitude,
+    }),
   };
 }

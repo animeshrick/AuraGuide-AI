@@ -4,15 +4,28 @@ import { DEFAULT_PROFILE } from "@/domain/demo-households";
 import { cleanProfile } from "@/domain/household-edit";
 import { LIMITS } from "@/domain/limits";
 import type { CookingFuel, HouseholdProfile, SupportedLanguageCode } from "@/domain/types";
+import type { MemberList } from "./useMemberList";
 import { useMemberList } from "./useMemberList";
 
 export type { MemberActions } from "./useMemberList";
+
+/** What `useHouseholdForm` returns: the member actions plus the home settings. */
+export interface HouseholdFormState extends MemberList {
+  /** The current value of every field, for rendering. */
+  values: Omit<HouseholdProfile, "coordinates" | "language"> & { version: number };
+  setCity: (city: string) => void;
+  setCookingFuel: (fuel: CookingFuel) => void;
+  setUsesIncenseOrCoils: (uses: boolean) => void;
+  setHasAirPurifier: (has: boolean) => void;
+  loadDemo: (demo: DemoHousehold) => void;
+  buildProfile: (language: SupportedLanguageCode) => HouseholdProfile | null;
+}
 
 /**
  * All state and actions behind the household form. The form components only
  * render; every change to the household goes through this hook.
  */
-export function useHouseholdForm(initialProfile?: HouseholdProfile | null) {
+export function useHouseholdForm(initialProfile?: HouseholdProfile | null): HouseholdFormState {
   const start = initialProfile ?? DEFAULT_PROFILE;
   const [city, setCity] = useState(start.city);
   const [cookingFuel, setCookingFuel] = useState<CookingFuel>(start.cookingFuel);
@@ -21,7 +34,7 @@ export function useHouseholdForm(initialProfile?: HouseholdProfile | null) {
   const memberList = useMemberList(start.members);
   const { members, version } = memberList;
 
-  const loadDemo = (demo: DemoHousehold) => {
+  const loadDemo = (demo: DemoHousehold): void => {
     setCity(demo.profile.city);
     setCookingFuel(demo.profile.cookingFuel);
     setUsesIncenseOrCoils(demo.profile.usesIncenseOrCoils);

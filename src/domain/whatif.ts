@@ -195,12 +195,11 @@ export function runWhatIf(
   const after = dailyCommuteEmissionsKg(member.commuteDistanceKm, toMode);
   const householdRecalculated = householdBaseline - before + after;
 
-  const baselineDose = calculateMemberExposure(member, profile, hourly, false);
+  const baselineDose = calculateMemberExposure(member, profile, hourly);
   const recalculatedDose = calculateMemberExposure(
     { ...member, commuteMode: toMode },
     profile,
-    hourly,
-    false
+    hourly
   );
   const changePct =
     baselineDose > 0 ? Math.round(((recalculatedDose - baselineDose) / baselineDose) * 100) : 0;

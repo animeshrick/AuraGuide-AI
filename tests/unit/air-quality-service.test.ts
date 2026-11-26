@@ -24,7 +24,11 @@ describe("resolveAirQuality", () => {
 
     expect(result).toEqual({ ok: true, airQuality: live });
     expect(mocks.geocodeCity).not.toHaveBeenCalled();
-    expect(mocks.fetchAirQuality).toHaveBeenCalledWith(28.6, 77.2, "Delhi");
+    expect(mocks.fetchAirQuality).toHaveBeenCalledWith({
+      name: "Delhi",
+      latitude: 28.6,
+      longitude: 77.2,
+    });
   });
 
   it("looks the city up and uses the name the geocoder returns", async () => {
@@ -40,7 +44,11 @@ describe("resolveAirQuality", () => {
     const result = await resolveAirQuality("kolkta");
 
     expect(result).toEqual({ ok: true, airQuality: live });
-    expect(mocks.fetchAirQuality).toHaveBeenCalledWith(22.57, 88.36, "Kolkata");
+    expect(mocks.fetchAirQuality).toHaveBeenCalledWith({
+      name: "Kolkata",
+      latitude: 22.57,
+      longitude: 88.36,
+    });
   });
 
   it("reports a city that does not exist, so the person can fix the spelling", async () => {
@@ -58,7 +66,11 @@ describe("resolveAirQuality", () => {
     const result = await resolveAirQuality("Delhi");
 
     expect(result).toEqual({ ok: true, airQuality: modelled });
-    expect(mocks.buildModelledAirQuality).toHaveBeenCalledWith("Delhi", 0, 0);
+    expect(mocks.buildModelledAirQuality).toHaveBeenCalledWith({
+      name: "Delhi",
+      latitude: 0,
+      longitude: 0,
+    });
     expect(mocks.fetchAirQuality).not.toHaveBeenCalled();
   });
 });

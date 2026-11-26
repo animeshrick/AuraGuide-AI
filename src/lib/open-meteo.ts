@@ -1,6 +1,11 @@
+import { z } from "zod";
 import { calculateAQI } from "@/domain/aqi";
 import type { CurrentAirQuality, HourlyAirQuality } from "@/domain/types";
 import { aqiCache } from "./cache";
+import { errorMessage, logger } from "./logger";
+
+const GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search";
+const AIR_QUALITY_URL = "https://air-quality-api.open-meteo.com/v1/air-quality";
 
 const FETCH_TIMEOUT_MS = 8_000;
 /** Fewer usable hours than this and the forecast is treated as unavailable. */
@@ -33,17 +38,41 @@ type GeocodeResult =
   | { status: "not_found" }
   | { status: "unavailable" };
 
-interface GeocodingResponse {
-  results?: { name: string; latitude: number; longitude: number }[];
+/** A named place with coordinates. */
+export interface Place {
+  name: string;
+  latitude: number;
+  longitude: number;
 }
 
-export interface OpenMeteoAirQualityResponse {
-  utc_offset_seconds?: number;
-  hourly?: {
-    time?: string[];
-    pm10?: (number | null)[];
-    pm2_5?: (number | null)[];
-  };
+/** The geocoder's answer. Only the fields the app uses are checked. */
+const GeocodingResponseSchema = z.object({
+  results: z
+    .array(z.object({ name: z.string(), latitude: z.number(), longitude: z.number() }))
+    .optional(),
+});
+
+/** One pollutant's hourly readings. Open-Meteo sends null for an hour it has no value for. */
+const ReadingsSchema = z.array(z.number().nullable());
+
+/** The air quality forecast. Every part is optional, because a partial answer can still be usable. */
+const AirQualityResponseSchema = z.object({
+  utc_offset_seconds: z.number().optional(),
+  hourly: z
+    .object({
+      time: z.array(z.string()).optional(),
+      pm10: ReadingsSchema.optional(),
+      pm2_5: ReadingsSchema.optional(),
+    })
+    .optional(),
+});
+
+/** The shape of an Open-Meteo air quality answer after it has been checked. */
+export type OpenMeteoAirQualityResponse = z.infer<typeof AirQualityResponseSchema>;
+
+/** An Open-Meteo address with its query string. URLSearchParams does the escaping. */
+function openMeteoUrl(base: string, params: Record<string, string>): string {
+  return `${base}?${new URLSearchParams(params).toString()}`;
 }
 
 /** One GET request to Open-Meteo, given up on after a few seconds so a slow service cannot hold a request open. */
@@ -58,14 +87,19 @@ export async function geocodeCity(city: string): Promise<GeocodeResult> {
   if (cached) return cached;
 
   try {
-    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
-      city.trim()
-    )}&count=1&language=en&format=json`;
+    const url = openMeteoUrl(GEOCODING_URL, {
+      name: city.trim(),
+      count: "1",
+      language: "en",
+      format: "json",
+    });
     const res = await openMeteoGet(url);
     if (!res.ok) return { status: "unavailable" };
 
-    const data: GeocodingResponse = await res.json();
-    const item = data.results?.[0];
+    // The answer comes from outside the app, so its shape is checked before it is used.
+    const parsed = GeocodingResponseSchema.safeParse(await res.json());
+    if (!parsed.success) return { status: "unavailable" };
+    const item = parsed.data.results?.[0];
     if (!item) return { status: "not_found" };
 
     const result = {
@@ -77,7 +111,7 @@ export async function geocodeCity(city: string): Promise<GeocodeResult> {
     aqiCache.set(cacheKey, result, GEOCODE_CACHE_MS);
     return result;
   } catch (err) {
-    console.error("Geocoding request failed:", err instanceof Error ? err.message : "unknown");
+    logger.error("Geocoding request failed:", errorMessage(err));
     return { status: "unavailable" };
   }
 }
@@ -86,6 +120,11 @@ export async function geocodeCity(city: string): Promise<GeocodeResult> {
 function readingAt(series: readonly (number | null)[], index: number): number | null {
   const value = series[index];
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+/** The hour of day (0 to 23) in a local time stamp such as "2026-11-19T18:00". */
+function hourOfStamp(stamp: string): number {
+  return parseInt(stamp.slice(11, 13), 10);
 }
 
 /** One forecast hour, or null when neither PM2.5 nor PM10 has a reading. */
@@ -100,7 +139,7 @@ function toHourEntry(
   const { aqi, category } = calculateAQI(p25, p10);
   return {
     time,
-    hour: parseInt(time.slice(11, 13), 10),
+    hour: hourOfStamp(time),
     pm25: Math.round(p25),
     pm10: Math.round(p10),
     aqi,
@@ -125,13 +164,6 @@ function parseForecastHours(data: OpenMeteoAirQualityResponse, nowMs: number): H
       time >= now ? toHourEntry(time, readingAt(pm25Series, i), readingAt(pm10Series, i)) : null
     )
     .filter((entry): entry is HourlyAirQuality => entry !== null);
-}
-
-/** A named place with coordinates. */
-export interface Place {
-  name: string;
-  latitude: number;
-  longitude: number;
 }
 
 /** Current air quality for a place, read from the first of its hourly entries. */
@@ -188,9 +220,7 @@ function modelledPm25(hour: number): number {
  * always labels it as modelled.
  */
 export function buildModelledAirQuality(
-  cityName: string,
-  latitude: number,
-  longitude: number,
+  place: Place,
   nowMs: number = Date.now()
 ): CurrentAirQuality {
   const offsetMs = MODELLED_UTC_OFFSET_SECONDS * 1000;
@@ -211,36 +241,36 @@ export function buildModelledAirQuality(
     };
   });
 
-  return summarise({ name: cityName, latitude, longitude }, hourly, "modelled", nowMs);
+  return summarise(place, hourly, "modelled", nowMs);
 }
 
 /** Current air, a 24-hour forecast and the hours for the outlook, cached for a short time. */
-export async function fetchAirQuality(
-  latitude: number,
-  longitude: number,
-  cityName: string
-): Promise<CurrentAirQuality> {
-  const cacheKey = `aqi:${latitude.toFixed(2)},${longitude.toFixed(2)}`;
+export async function fetchAirQuality(place: Place): Promise<CurrentAirQuality> {
+  const cacheKey = `aqi:${place.latitude.toFixed(2)},${place.longitude.toFixed(2)}`;
   const cached = aqiCache.get<CurrentAirQuality>(cacheKey);
-  if (cached) return { ...cached, city: cityName };
+  if (cached) return { ...cached, city: place.name };
 
   try {
-    const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${latitude}&longitude=${longitude}&hourly=pm10,pm2_5&forecast_days=${FORECAST_DAYS}&timezone=auto`;
+    const url = openMeteoUrl(AIR_QUALITY_URL, {
+      latitude: String(place.latitude),
+      longitude: String(place.longitude),
+      hourly: "pm10,pm2_5",
+      forecast_days: String(FORECAST_DAYS),
+      timezone: "auto",
+    });
     const res = await openMeteoGet(url);
     if (!res.ok) throw new Error(`Open-Meteo returned status ${res.status}`);
 
-    const data: OpenMeteoAirQualityResponse = await res.json();
-    const result = buildAirQuality(data, { name: cityName, latitude, longitude });
+    const parsed = AirQualityResponseSchema.safeParse(await res.json());
+    if (!parsed.success) throw new Error("Open-Meteo returned an unexpected shape");
+    const result = buildAirQuality(parsed.data, place);
     if (!result) throw new Error("Open-Meteo returned too little usable data");
 
     aqiCache.set(cacheKey, result, LIVE_CACHE_MS);
     return result;
   } catch (err) {
-    console.warn(
-      "Using modelled air quality because live data failed:",
-      err instanceof Error ? err.message : "unknown"
-    );
-    const modelled = buildModelledAirQuality(cityName, latitude, longitude);
+    logger.warn("Using modelled air quality because live data failed:", errorMessage(err));
+    const modelled = buildModelledAirQuality(place);
     aqiCache.set(cacheKey, modelled, MODELLED_CACHE_MS);
     return modelled;
   }

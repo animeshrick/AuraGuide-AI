@@ -6,9 +6,9 @@ import { formatMessage } from "@/i18n";
 import type { WhatIfResult } from "@/lib/api-client";
 import { formatKg } from "@/lib/format";
 import { bySign } from "@/lib/by-sign";
-import { NOTICE, PANEL } from "../styles";
-import type { VerdictLook } from "../VerdictCard";
-import { VerdictCard } from "../VerdictCard";
+import { NOTICE, PANEL } from "@/components/styles";
+import type { VerdictLook } from "@/components/VerdictCard";
+import { VerdictCard } from "@/components/VerdictCard";
 import type { WhatIfVerdict } from "@/lib/whatif-verdict";
 import { barWidths, whatIfVerdict } from "@/lib/whatif-verdict";
 
@@ -122,30 +122,25 @@ const ExplanationCard: React.FC<{ explanation: string; t: Dictionary["whatIf"] }
   </div>
 );
 
+/** The "now" and "after" bars of a fact card. */
+interface FactBars {
+  /** Bar widths as a share (0 to 100) of the larger value. */
+  widths: { now: number; after: number };
+  /** Colour class for the "after" bar: better, worse or the same. */
+  tone: string;
+  labels: { now: string; after: string };
+  /** The values written beside the bars, when they mean something to the reader. */
+  values?: { now: string; after: string };
+}
+
 /** One number that changes, in words first and as two bars second. */
 const FactCard: React.FC<{
   icon: LucideIcon;
   title: string;
   headline: string;
   note: string;
-  nowLabel: string;
-  afterLabel: string;
-  bars: { now: number; after: number };
-  tone: string;
-  nowText?: string;
-  afterText?: string;
-}> = ({
-  icon: Icon,
-  title,
-  headline,
-  note,
-  nowLabel,
-  afterLabel,
-  bars,
-  tone,
-  nowText,
-  afterText,
-}) => (
+  bars: FactBars;
+}> = ({ icon: Icon, title, headline, note, bars }) => (
   <div className={PANEL}>
     <p className="flex items-center gap-2 text-base font-semibold text-slate-900">
       <Icon className="w-5 h-5 text-sky-700 shrink-0" aria-hidden="true" />
@@ -156,8 +151,18 @@ const FactCard: React.FC<{
 
     {/* The words above carry the meaning. The bars only show it at a glance. */}
     <div aria-hidden="true" className="mt-4 space-y-2">
-      <BarRow label={nowLabel} width={bars.now} className="bg-slate-400" text={nowText} />
-      <BarRow label={afterLabel} width={bars.after} className={tone} text={afterText} />
+      <BarRow
+        label={bars.labels.now}
+        width={bars.widths.now}
+        className="bg-slate-400"
+        text={bars.values?.now}
+      />
+      <BarRow
+        label={bars.labels.after}
+        width={bars.widths.after}
+        className={bars.tone}
+        text={bars.values?.after}
+      />
     </div>
   </div>
 );
@@ -185,6 +190,7 @@ const WhatIfAnswer: React.FC<{
 }> = ({ result, dict }) => {
   const t = dict.whatIf;
   const name = result.memberName;
+  const labels = { now: t.barNow, after: t.barAfter };
   const { verdict, airHeadline, fumesHeadline, airBars, fumeBars, airTone, fumesTone } =
     describeChange(result, t);
 
@@ -198,22 +204,22 @@ const WhatIfAnswer: React.FC<{
           title={formatMessage(t.breathTitle, { name })}
           headline={airHeadline}
           note={t.breathNote}
-          nowLabel={t.barNow}
-          afterLabel={t.barAfter}
-          bars={airBars}
-          tone={airTone}
+          bars={{ widths: airBars, tone: airTone, labels }}
         />
         <FactCard
           icon={Cloud}
           title={t.fumesTitle}
           headline={fumesHeadline}
           note={t.fumesNote}
-          nowLabel={t.barNow}
-          afterLabel={t.barAfter}
-          bars={fumeBars}
-          tone={fumesTone}
-          nowText={`${formatKg(result.householdBaselineEmissionsKg)} kg`}
-          afterText={`${formatKg(result.householdRecalculatedEmissionsKg)} kg`}
+          bars={{
+            widths: fumeBars,
+            tone: fumesTone,
+            labels,
+            values: {
+              now: `${formatKg(result.householdBaselineEmissionsKg)} kg`,
+              after: `${formatKg(result.householdRecalculatedEmissionsKg)} kg`,
+            },
+          }}
         />
       </div>
 

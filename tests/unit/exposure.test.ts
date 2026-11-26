@@ -111,8 +111,8 @@ describe("calculateMemberExposure", () => {
 
   it("falls when the plan is followed", () => {
     const member = profile.members[1];
-    expect(calculateMemberExposure(member, profile, hourly, true)).toBeLessThan(
-      calculateMemberExposure(member, profile, hourly, false)
+    expect(calculateMemberExposure(member, profile, hourly, "optimized")).toBeLessThan(
+      calculateMemberExposure(member, profile, hourly, "normal")
     );
   });
 

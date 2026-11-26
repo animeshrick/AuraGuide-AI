@@ -23,6 +23,12 @@ import type {
 } from "./types";
 import { shiftActivityHour } from "./windows";
 
+const HOURS_PER_DAY = 24;
+const MINUTES_PER_HOUR = 60;
+
+/** "normal" is the household's current habits. "optimized" is the day with the plan followed. */
+export type ExposureScenario = "normal" | "optimized";
+
 const COOKING_HOURS: readonly number[] = DAY_MODEL.cookingHours;
 const INCENSE_HOURS: readonly number[] = DAY_MODEL.incenseHours;
 
@@ -62,9 +68,9 @@ function activityMinutesByHour(
   for (const activity of activities) {
     let remaining = Math.max(0, activity.durationMinutes);
     let hour = startHourFor(activity);
-    for (let step = 0; remaining > 0 && step < 24; step++) {
-      const slice = Math.min(60, remaining);
-      const key = hour % 24;
+    for (let step = 0; remaining > 0 && step < HOURS_PER_DAY; step++) {
+      const slice = Math.min(MINUTES_PER_HOUR, remaining);
+      const key = hour % HOURS_PER_DAY;
       minutes.set(key, (minutes.get(key) ?? 0) + slice);
       remaining -= slice;
       hour += 1;
@@ -89,11 +95,11 @@ export function calculateMemberExposure(
   member: HouseholdMember,
   profile: HouseholdProfile,
   hourlyData: HourlyAirQuality[],
-  isOptimized: boolean = false
+  scenario: ExposureScenario = "normal"
 ): number {
-  const day = describeDay(member, profile, hourlyData, isOptimized);
+  const day = describeDay(member, profile, hourlyData, scenario);
   let totalDose = 0;
-  for (let hour = 0; hour < 24; hour++) totalDose += doseForHour(hour, day);
+  for (let hour = 0; hour < HOURS_PER_DAY; hour++) totalDose += doseForHour(hour, day);
   return Math.round(totalDose * getSensitivityMultiplier(member));
 }
 
@@ -116,12 +122,13 @@ function describeDay(
   member: HouseholdMember,
   profile: HouseholdProfile,
   hourlyData: HourlyAirQuality[],
-  isOptimized: boolean
+  scenario: ExposureScenario
 ): DayScenario {
+  const isOptimized = scenario === "optimized";
   const byHour = indexByHour(hourlyData);
   const meanPm25 = meanOf(hourlyData.map((h) => h.pm25));
   const commutes = !staysAtHome(member.commuteMode);
-  const commuteHours = Math.max(member.commuteTimeMinutes, 0) / 60;
+  const commuteHours = Math.max(member.commuteTimeMinutes, 0) / MINUTES_PER_HOUR;
   return {
     pmAt: (hour) => byHour.get(hour)?.pm25 ?? meanPm25,
     commutes,
@@ -167,7 +174,10 @@ function doseForHour(hour: number, day: DayScenario): number {
   });
 
   const commuteFraction = COMMUTE_HOURS.includes(hour) ? day.legFraction : 0;
-  const activityFraction = Math.min((day.activityMinutes.get(hour) ?? 0) / 60, 1 - commuteFraction);
+  const activityFraction = Math.min(
+    (day.activityMinutes.get(hour) ?? 0) / MINUTES_PER_HOUR,
+    1 - commuteFraction
+  );
   const indoorFraction = 1 - commuteFraction - activityFraction;
   const indoorRate = indoorBreathingRate(hour);
   const travelPm25 =
@@ -230,8 +240,8 @@ export function calculateHouseholdExposureImpacts(
   hourlyData: HourlyAirQuality[]
 ): MemberExposureImpact[] {
   return profile.members.map((member) => {
-    const baseline = calculateMemberExposure(member, profile, hourlyData, false);
-    const optimized = calculateMemberExposure(member, profile, hourlyData, true);
+    const baseline = calculateMemberExposure(member, profile, hourlyData, "normal");
+    const optimized = calculateMemberExposure(member, profile, hourlyData, "optimized");
     const avoidedPercent = baseline > 0 ? Math.round(((baseline - optimized) / baseline) * 100) : 0;
 
     return {

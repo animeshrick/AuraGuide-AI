@@ -140,7 +140,7 @@ describe("buildAirQuality", () => {
 
 describe("buildModelledAirQuality", () => {
   it("is labelled modelled and covers 24 consecutive hours from the current Indian hour", () => {
-    const aq = buildModelledAirQuality("Delhi", 28.6, 77.2, NOW_UTC);
+    const aq = buildModelledAirQuality({ name: "Delhi", latitude: 28.6, longitude: 77.2 }, NOW_UTC);
     expect(aq.dataSource).toBe("modelled");
     expect(aq.hourly).toHaveLength(24);
     expect(aq.hourly[0].hour).toBe(18);
@@ -150,7 +150,7 @@ describe("buildModelledAirQuality", () => {
   });
 
   it("is worse in the early morning than in the afternoon", () => {
-    const aq = buildModelledAirQuality("Delhi", 0, 0, NOW_UTC);
+    const aq = buildModelledAirQuality({ name: "Delhi", latitude: 0, longitude: 0 }, NOW_UTC);
     const at = (hour: number) => aq.hourly.find((h) => h.hour === hour)!.aqi;
     expect(at(7)).toBeGreaterThan(at(14));
   });
@@ -204,6 +204,11 @@ describe("network functions", () => {
       expect(await geocodeCity("Mumbai")).toEqual({ status: "unavailable" });
     });
 
+    it("says unavailable when the answer does not have the expected shape", async () => {
+      fetchMock.mockResolvedValue(json({ results: [{ name: "Delhi", latitude: "north" }] }));
+      expect(await geocodeCity("Delhi")).toEqual({ status: "unavailable" });
+    });
+
     it("remembers a city so it is looked up once", async () => {
       fetchMock.mockResolvedValue(
         json({ results: [{ name: "Patna", latitude: 25.6, longitude: 85.1 }] })
@@ -216,14 +221,14 @@ describe("network functions", () => {
     it("encodes the city in the URL", async () => {
       fetchMock.mockResolvedValue(json({}));
       await geocodeCity("a&b=c d");
-      expect(String(fetchMock.mock.calls[0][0])).toContain("name=a%26b%3Dc%20d");
+      expect(String(fetchMock.mock.calls[0][0])).toContain("name=a%26b%3Dc+d");
     });
   });
 
   describe("fetchAirQuality", () => {
     it("returns live data labelled open-meteo", async () => {
       fetchMock.mockResolvedValue(json(makeResponse()));
-      const aq = await fetchAirQuality(28.6, 77.2, "Delhi");
+      const aq = await fetchAirQuality({ name: "Delhi", latitude: 28.6, longitude: 77.2 });
       expect(aq.dataSource).toBe("open-meteo");
       expect(aq.hourly[0].hour).toBe(18);
       expect(aq.city).toBe("Delhi");
@@ -231,8 +236,8 @@ describe("network functions", () => {
 
     it("reuses recent live data", async () => {
       fetchMock.mockResolvedValue(json(makeResponse()));
-      await fetchAirQuality(28.6, 77.2, "Delhi");
-      const again = await fetchAirQuality(28.6, 77.2, "New Delhi");
+      await fetchAirQuality({ name: "Delhi", latitude: 28.6, longitude: 77.2 });
+      const again = await fetchAirQuality({ name: "New Delhi", latitude: 28.6, longitude: 77.2 });
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(again.city).toBe("New Delhi");
     });
@@ -240,16 +245,17 @@ describe("network functions", () => {
     it.each([
       ["a server error", () => json({}, 500)],
       ["too little data", () => json(makeResponse({ pm2_5: [], pm10: [] }))],
+      ["an unexpected shape", () => json({ hourly: { time: "now", pm2_5: ["high"] } })],
     ])("falls back to the modelled pattern after %s", async (_label, respond) => {
       fetchMock.mockResolvedValue(respond());
-      const aq = await fetchAirQuality(10.1, 20.2, "Delhi");
+      const aq = await fetchAirQuality({ name: "Delhi", latitude: 10.1, longitude: 20.2 });
       expect(aq.dataSource).toBe("modelled");
       expect(aq.hourly).toHaveLength(24);
     });
 
     it("falls back to the modelled pattern when the request fails", async () => {
       fetchMock.mockRejectedValue(new Error("timeout"));
-      const aq = await fetchAirQuality(11.1, 21.2, "Delhi");
+      const aq = await fetchAirQuality({ name: "Delhi", latitude: 11.1, longitude: 21.2 });
       expect(aq.dataSource).toBe("modelled");
     });
   });

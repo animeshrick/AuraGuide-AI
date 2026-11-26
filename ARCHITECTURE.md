@@ -28,7 +28,7 @@ src/
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
 | `src/domain`     | AQI maths, exposure and emissions models, safe windows, outlook, what-if, outing advice, plants, shared input limits, types          | `aqi.ts`, `exposure.ts`, `outlook.ts`, `limits.ts`        |
 | `src/ai`         | Prompt builders, request and response schemas, the Gemini client, retries and model fallback, error classification, input sanitising | `gemini.ts`, `model-chain.ts`, `prompts.ts`, `schemas.ts` |
-| `src/lib`        | Open-Meteo client, shared API route helper, rate limiter, caches, typed browser API client, formatting                               | `open-meteo.ts`, `api-route.ts`, `api-client.ts`          |
+| `src/lib`        | Open-Meteo client, shared API route helper, rate limiter, caches, typed browser API client, environment settings, logger, formatting | `open-meteo.ts`, `api-route.ts`, `env.ts`, `logger.ts`    |
 | `src/app`        | `page.tsx`, `layout.tsx`, error pages, `api/plan`, `api/whatif`, `api/advisory`                                                      | `api/plan/route.ts`                                       |
 | `src/components` | Presentational components. `household/`, `whatif/`, `advisory/` and `outing/` hold the parts of bigger panels                        | `PlanResults.tsx`, `household/MemberCard.tsx`             |
 | `src/hooks`      | Page session, language choice, session storage, cancelling stale requests                                                            | `usePlanSession.ts`, `useLatestRequest.ts`                |
@@ -89,3 +89,6 @@ CI runs lint, formatting, type checks, unit tests with coverage limits, a produc
 | Open-Meteo for air quality                         | Free, no key, hourly forecasts for any city with PM2.5 and PM10                                           |
 | In-memory cache and rate limiter                   | Enough for a single small deployment; they reset per server instance                                      |
 | Input limits in one file (`domain/limits.ts`)      | The form and the server always agree on what is valid                                                     |
+| Environment read in one file (`lib/env.ts`)        | Every setting is validated once with Zod; a bad value falls back to its default instead of breaking a run |
+| Outside answers are checked before use             | Open-Meteo and Gemini replies are parsed with Zod schemas, so an unexpected shape cannot reach the engine |
+| One logger (`lib/logger.ts`)                       | Server logs go through one place, which only ever receives short messages and reasons                     |

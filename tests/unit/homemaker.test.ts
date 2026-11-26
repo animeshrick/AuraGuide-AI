@@ -44,8 +44,8 @@ describe("homemaker in the engine", () => {
       commuteDistanceKm: 30,
       commuteTimeMinutes: 90,
     });
-    expect(calculateMemberExposure(homemaker, profile, hourly, false)).toBe(
-      calculateMemberExposure(home, profile, hourly, false)
+    expect(calculateMemberExposure(homemaker, profile, hourly, "normal")).toBe(
+      calculateMemberExposure(home, profile, hourly, "normal")
     );
   });
 
@@ -53,8 +53,8 @@ describe("homemaker in the engine", () => {
     const profile = makeProfile({ cookingFuel: "biomass", hasAirPurifier: false });
     const commuter = makeMember({ commuteMode: "metro", commuteDistanceKm: 10 });
     const homemaker = makeMember({ commuteMode: "homemaker", commuteDistanceKm: 0 });
-    const away = calculateMemberExposure(commuter, profile, hourly, false);
-    const home = calculateMemberExposure(homemaker, profile, hourly, false);
+    const away = calculateMemberExposure(commuter, profile, hourly, "normal");
+    const home = calculateMemberExposure(homemaker, profile, hourly, "normal");
     expect(home).not.toBe(away);
   });
 

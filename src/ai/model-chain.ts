@@ -1,9 +1,11 @@
 import { GoogleGenAI } from "@google/genai";
+import { readServerEnv } from "@/lib/env";
+import { logger } from "@/lib/logger";
 import { classifyGeminiError, GeminiUnavailableError } from "./gemini-errors";
 
 /** A Gemini client for the configured key. Throws `missing_key` when there is none. */
 export function getClient(): GoogleGenAI {
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  const apiKey = readServerEnv().geminiApiKey;
   if (!apiKey || apiKey === "your_gemini_api_key_here") {
     throw new GeminiUnavailableError("missing_key", "GEMINI_API_KEY is not set");
   }
@@ -14,7 +16,7 @@ export function getClient(): GoogleGenAI {
 const TRANSIENT_RETRIES = 2;
 /** Stop starting new attempts after this long, so one request cannot hang for minutes. */
 const TOTAL_BUDGET_MS = 60_000;
-const DEFAULT_MODELS = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-3.5-flash-lite"];
+const DEFAULT_MODELS = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-3.5-flash-lite"] as const;
 const DEFAULT_RETRY_BASE_MS = 1_000;
 
 /**
@@ -22,25 +24,24 @@ const DEFAULT_RETRY_BASE_MS = 1_000;
  * GEMINI_RETRY_BASE_MS changes the base, for example 0 in tests.
  */
 function retryDelayMs(attempt: number): number {
-  const configured = Number.parseInt(process.env.GEMINI_RETRY_BASE_MS ?? "", 10);
-  const base = Number.isFinite(configured) && configured >= 0 ? configured : DEFAULT_RETRY_BASE_MS;
+  const base = readServerEnv().geminiRetryBaseMs ?? DEFAULT_RETRY_BASE_MS;
   return base * 2 ** attempt;
 }
 
 /** Model 1, then model 2 and model 3. Set GEMINI_MODEL, GEMINI_MODEL_2 and GEMINI_MODEL_3 to change them. */
 function getModelChain(): string[] {
-  const configured = [
-    process.env.GEMINI_MODEL,
-    process.env.GEMINI_MODEL_2,
-    process.env.GEMINI_MODEL_3,
+  const [first, second, third] = readServerEnv().geminiModels;
+  const chain = [
+    first ?? DEFAULT_MODELS[0],
+    second ?? DEFAULT_MODELS[1],
+    third ?? DEFAULT_MODELS[2],
   ];
-  const chain = configured.map((value, i) => value?.trim() || DEFAULT_MODELS[i]);
   return [...new Set(chain)];
 }
 
 /** The first model in the chain, used as part of the cache key. */
 export function getModelName(): string {
-  return getModelChain()[0];
+  return readServerEnv().geminiModels[0] ?? DEFAULT_MODELS[0];
 }
 
 /** Errors worth retrying on the same model: overload and 5xx answers. */
@@ -92,7 +93,7 @@ async function tryModel<T>(
     } catch (err) {
       error = err;
       const reason = classifyGeminiError(err);
-      console.error(`[gemini] ${label} model=${model} attempt=${attempt + 1} failed (${reason})`);
+      logger.error(`[gemini] ${label} model=${model} attempt=${attempt + 1} failed (${reason})`);
       if (reason === "invalid_key" || reason === "missing_key") throw logFailure(label, err);
       if (!isTransient(err) || attempt === TRANSIENT_RETRIES) break;
       await sleep(retryDelayMs(attempt));
@@ -105,6 +106,6 @@ async function tryModel<T>(
 function logFailure(label: string, err: unknown): GeminiUnavailableError {
   const reason = classifyGeminiError(err);
   const detail = err instanceof Error ? err.message.slice(0, 200) : "";
-  console.error(`[gemini] ${label} failed (${reason})${detail ? `: ${detail}` : ""}`);
+  logger.error(`[gemini] ${label} failed (${reason})${detail ? `: ${detail}` : ""}`);
   return new GeminiUnavailableError(reason, detail);
 }

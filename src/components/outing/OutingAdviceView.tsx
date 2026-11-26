@@ -4,10 +4,10 @@ import { formatHour } from "@/domain/labels";
 import type { OutingAdvice, OutingLevel } from "@/domain/outing";
 import type { Dictionary } from "@/i18n";
 import { formatMessage } from "@/i18n";
-import { LocalizedAQIBadge } from "../AQIBadge";
-import { PANEL } from "../styles";
-import type { VerdictLook } from "../VerdictCard";
-import { VerdictCard } from "../VerdictCard";
+import { LocalizedAQIBadge } from "@/components/AQIBadge";
+import { PANEL } from "@/components/styles";
+import type { VerdictLook } from "@/components/VerdictCard";
+import { VerdictCard } from "@/components/VerdictCard";
 
 /** Each level has a word, an icon and a colour, so colour is never the only signal. */
 const LEVEL_LOOK: Record<OutingLevel, VerdictLook> = {

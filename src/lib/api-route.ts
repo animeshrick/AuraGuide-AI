@@ -2,6 +2,7 @@ import type { NextResponse } from "next/server";
 import type { z } from "zod";
 import { GeminiUnavailableError } from "@/ai/gemini";
 import { apiError, enforceRateLimit, readJsonBody } from "./http";
+import { errorMessage, logger } from "./logger";
 import { validatePayload } from "./validation";
 
 interface JsonRouteOptions<S extends z.ZodType> {
@@ -46,7 +47,7 @@ export function createJsonRoute<S extends z.ZodType>(options: JsonRouteOptions<S
           503
         );
       }
-      console.error(`${options.name} failed:`, err instanceof Error ? err.message : "unknown");
+      logger.error(`${options.name} failed:`, errorMessage(err));
       return apiError("internal_error", options.failureMessage, 500);
     }
   };

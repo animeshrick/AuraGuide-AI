@@ -1,3 +1,5 @@
+import { readServerEnv } from "./env";
+
 /** Requests counted for one client in the current one-minute window. */
 interface RateLimitRecord {
   count: number;
@@ -11,8 +13,7 @@ const DEFAULT_LIMIT_PER_MINUTE = 30;
 /** The limit to apply: the caller's, else RATE_LIMIT_PER_MINUTE, else the default. */
 function resolveLimit(limitPerMinute?: number): number {
   if (limitPerMinute && limitPerMinute > 0) return limitPerMinute;
-  const fromEnv = parseInt(process.env.RATE_LIMIT_PER_MINUTE ?? "", 10);
-  return Number.isFinite(fromEnv) && fromEnv > 0 ? fromEnv : DEFAULT_LIMIT_PER_MINUTE;
+  return readServerEnv().rateLimitPerMinute ?? DEFAULT_LIMIT_PER_MINUTE;
 }
 
 /** Count one request for this caller in a fixed one-minute window. */

@@ -45,8 +45,8 @@ describe("smoking in the exposure estimate", () => {
   it("raises the estimated dose compared with the same person who does not smoke", () => {
     const base = makeMember({ sensitivities: ["none"] });
     const smoker = { ...base, smokes: true };
-    expect(calculateMemberExposure(smoker, profile, hourly, false)).toBeGreaterThan(
-      calculateMemberExposure(base, profile, hourly, false)
+    expect(calculateMemberExposure(smoker, profile, hourly, "normal")).toBeGreaterThan(
+      calculateMemberExposure(base, profile, hourly, "normal")
     );
   });
 

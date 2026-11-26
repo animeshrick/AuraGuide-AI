@@ -3,7 +3,7 @@ import { Check, Copy, Share2 } from "lucide-react";
 import type { Dictionary } from "@/i18n";
 import { formatMessage } from "@/i18n";
 import type { AdvisoryResult } from "@/lib/api-client";
-import { SUB_CARD } from "../styles";
+import { SUB_CARD } from "@/components/styles";
 
 interface AdvisoryResultCardProps {
   result: AdvisoryResult;

@@ -11,12 +11,30 @@ import {
 import { LIMITS } from "@/domain/limits";
 import type { HealthSensitivity, HouseholdMember, OutdoorActivity } from "@/domain/types";
 
+/** What `useMemberList` returns: the members and every action that changes them. */
+export interface MemberList {
+  members: HouseholdMember[];
+  /** Changes when the uncontrolled number fields must be redrawn from state. */
+  version: number;
+  /** Replace every member, for example from a sample household. */
+  replaceMembers: (next: HouseholdMember[]) => void;
+  addMember: () => void;
+  removeMember: (id: string) => void;
+  updateMember: (id: string, updates: Partial<HouseholdMember>) => void;
+  toggleMemberSensitivity: (id: string, sensitivity: HealthSensitivity) => void;
+  addActivity: (id: string) => void;
+  updateActivity: (id: string, index: number, updates: Partial<OutdoorActivity>) => void;
+  removeActivity: (id: string, index: number) => void;
+  /** Keep a reference to each member's name field so a new member can be focused. */
+  registerNameInput: (id: string, el: HTMLInputElement | null) => void;
+}
+
 /**
  * The household's members and every action that changes them. `version`
  * changes when the number fields must be redrawn from state, because those
  * fields are uncontrolled.
  */
-export function useMemberList(initial: HouseholdMember[]) {
+export function useMemberList(initial: HouseholdMember[]): MemberList {
   const [members, setMembers] = useState<HouseholdMember[]>(initial);
   const [version, setVersion] = useState(0);
   // A new member card appears below the Add member button, often off screen, so move the cursor to it.
@@ -38,7 +56,6 @@ export function useMemberList(initial: HouseholdMember[]) {
   return {
     members,
     version,
-    /** Replace every member, for example from a sample household. */
     replaceMembers: (next: HouseholdMember[]) => {
       setMembers(next);
       setVersion((v) => v + 1);
@@ -67,7 +84,6 @@ export function useMemberList(initial: HouseholdMember[]) {
       // Rows are keyed by position, so refresh the number fields to show the right values.
       setVersion((v) => v + 1);
     },
-    /** Keep a reference to each member's name field so a new member can be focused. */
     registerNameInput: (id: string, el: HTMLInputElement | null) => {
       if (el) nameInputs.current.set(id, el);
       else nameInputs.current.delete(id);
@@ -77,6 +93,6 @@ export function useMemberList(initial: HouseholdMember[]) {
 
 /** Everything the form's member cards need to change a member. */
 export type MemberActions = Omit<
-  ReturnType<typeof useMemberList>,
+  MemberList,
   "members" | "version" | "replaceMembers" | "addMember"
 >;
